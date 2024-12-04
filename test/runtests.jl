@@ -1,4 +1,4 @@
-using Pkg; Pkg.activate("AmphiDEB/test")
+using Pkg; Pkg.activate("test")
 
 using Test
 using Plots, StatsPlots, Plots.Measures
@@ -14,4 +14,5 @@ using Revise
 
 
 include("test01_base_model_noeffects.jl")
-include("test02_pathogens.jl")
+include("test02_ibm_noeffects.jl")
+#include("test02_pathogens.jl")

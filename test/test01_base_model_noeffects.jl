@@ -1,5 +1,3 @@
-using Pkg; Pkg.activate("AmphiDEB/test")
-
 using Test
 using Distributions
 using OrdinaryDiffEq
@@ -21,7 +19,6 @@ import EcotoxSystems: DEBODE_global!
 
 import EcotoxSystems: sig
 import EcotoxSystems: constrmvec
-
 
 
 # Amphibian model without chemical or pathogen effects 

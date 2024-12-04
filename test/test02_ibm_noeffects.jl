@@ -1,5 +1,3 @@
-using Pkg; Pkg.activate("AmphiDEB/test")
-
 using Test
 using Distributions
 using OrdinaryDiffEq
