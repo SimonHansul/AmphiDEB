@@ -37,7 +37,7 @@ import EcotoxSystems: default_individual_rules!
 
 norm(x) = x ./ sum(x)
 
-begin
+@testset "Projection exponential growth" begin
     p = deepcopy(AmphiDEB.defaultparams)
 
     p.glb.t_max = 365*2
@@ -53,12 +53,14 @@ begin
         p; 
         individual_ode! = Amphibian_noeffects!, 
         init_individual_statevars = AmphiDEB.initialize_individual_statevars,
-        showinfo = 30,  # update every 30 days
+        showinfo = 60,  # update every 30 days
         saveat = 7, # saving weekly output
         dt = 1 # daily timestep - better to turn down to hourly for proper results
         )
     
     
+    @test 2500 <= sim.glb.N[end] <= 3500 # expected abundance after 2 years
+
     p_glb = @df sim.glb plot(:t, :N, xrotation = 45, xlabel = "Time [d]", ylabel = "N", title = "Abundance", leftmargin = 5mm)
 
     p_spc = @df sim.spc plot(
