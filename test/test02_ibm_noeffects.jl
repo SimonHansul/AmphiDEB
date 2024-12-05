@@ -26,8 +26,10 @@ import EcotoxSystems: IBM_simulator
 Amphibian_noeffects!(du, u, p, t) = begin
 
     DEBODE_global!(du, u, p, t)
+    
     u.ind.y_j .= 1 # making sure that all effects are turned off
     u.ind.y_jP .= 1
+    
     Amphibian_DEB!(du, u, p, t)
 
 end

@@ -23,7 +23,7 @@ initialize_pathogen_statevars(p) = ComponentVector(P_Z = 0)
 
 function initialize_statevars(p::ComponentVector)
 
-    global_statevars = ComponentVector(EcotoxSystems.initialize_global_statevars(p), P_Z = 0)
+    global_statevars = ComponentVector(EcotoxSystems.initialize_global_statevars(p))
     pathogen_statevars = initialize_pathogen_statevars(p)
     individual_statevars = initialize_individual_statevars(p)
     
