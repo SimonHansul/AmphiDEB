@@ -38,13 +38,13 @@ end
 
 condition_inoculation(u, t, integrator) = integrator.p.glb.pathogen_inoculation_time - t
 function effect_inoculation!(integrator) 
-    integrator.u.glb.P_Z = integrator.p.glb.pathogen_inoculation_dose
+    integrator.u.pth.P_Z = integrator.p.glb.pathogen_inoculation_dose
 end
 
 # definition of the callback for media renewals
 condition_renewal(u, t, integrator) = prod(integrator.p.glb.medium_renewals  .- t)  
 function effect_renewal!(integrator)
-    integrator.u.glb.P_Z = 0. # when renewal occurs, set zoospores to 0
+    integrator.u.pth.P_Z = 0. # when renewal occurs, set zoospores to 0
 end
 
 

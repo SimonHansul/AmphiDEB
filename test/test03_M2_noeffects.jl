@@ -38,7 +38,7 @@ AmphiDEB.calc_S_max_juv(defaultparams.spc)
 @testset "Default parameters" begin 
     global p = deepcopy(defaultparams)
 
-    p.glb.t_max = 365*2
+    p.glb.t_max = 365    
     p.glb.pathogen_inoculation_time = Inf
 
     p.glb.dX_in = 15.
@@ -71,5 +71,3 @@ AmphiDEB.calc_S_max_juv(defaultparams.spc)
     #@test 55 <= maximum(sim.S) <= 60 # check final structural mass
     #@test ([sum([r.embryo, r.larva, r.metamorph, r.juvenile, r.adult])==1 for r in eachrow(sim)] |> unique)==[1] # check that exactly one life stage at a time is "true"
 end
-
-
