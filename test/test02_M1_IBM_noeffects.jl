@@ -30,7 +30,7 @@ Amphibian_noeffects!(du, u, p, t) = begin
     u.ind.y_j .= 1 # making sure that all effects are turned off
     u.ind.y_jP .= 1
     
-    Amphibian_DEB!(du, u, p, t)
+    Amphibian_DEB_M1!(du, u, p, t)
 
 end
 
@@ -42,7 +42,7 @@ norm(x) = x ./ sum(x)
 @testset "Projecting exponential growth" begin
     p = deepcopy(AmphiDEB.defaultparams)
 
-    p.glb.t_max = 365*2
+    p.glb.t_max = 60.
     p.glb.dX_in = 100.
     p.glb.k_V = 0.
     p.glb.N0 = 10

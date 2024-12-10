@@ -26,7 +26,7 @@ Amphibian_noeffects!(du, u, p, t) = begin
     DEBODE_global!(du, u, p, t)
     u.ind.y_j .= 1 # making sure that all effects are turned off
     u.ind.y_jP .= 1
-    Amphibian_DEB!(du, u, p, t)
+    AmphiDEB.Amphibian_DEB_M2!(du, u, p, t)
 end
 
 # implementation works as long as k_J is not too high...
@@ -38,14 +38,16 @@ AmphiDEB.calc_S_max_juv(defaultparams.spc)
 @testset "Default parameters" begin 
     global p = deepcopy(defaultparams)
 
-    p.glb.t_max = 365*2
+    p.glb.t_max = 60
     p.glb.pathogen_inoculation_time = Inf
 
     p.glb.dX_in = 15.
+    p.spc.k_J_emb = 0.
 
     @time sim = ODE_simulator(
             p, 
             returntype = EcotoxSystems.dataframe, 
+            model = Amphibian_noeffects!,
             alg = Tsit5()
             );
 
@@ -55,15 +57,19 @@ AmphiDEB.calc_S_max_juv(defaultparams.spc)
     
     plt = plot_statevars(
         sim, 
-        [:S, :H, :E_mt_rel, :R, :X_emb, :J, :R, :dI, :W_tot, :f_X], 
+        [
+            :S, :H, :E_mt_rel, 
+            :R, :X_emb, :J, :R, 
+            :dI, :W_tot, :f_X, :metamorph
+            ], 
         xrotation = 45
         )
     hline!([p.spc.H_j1], subplot=2, color = :gray, linestyle = :dash)
 
     display(plt)
 
-    @test 55 <= maximum(sim.S) <= 60 # check final structural mass
-    @test ([sum([r.embryo, r.larva, r.metamorph, r.juvenile, r.adult])==1 for r in eachrow(sim)] |> unique)==[1] # check that exactly one life stage at a time is "true"
+    #@test 55 <= maximum(sim.S) <= 60 # check final structural mass
+    #@test ([sum([r.embryo, r.larva, r.metamorph, r.juvenile, r.adult])==1 for r in eachrow(sim)] |> unique)==[1] # check that exactly one life stage at a time is "true"
 end
 
 

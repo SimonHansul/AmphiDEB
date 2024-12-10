@@ -4,7 +4,7 @@ A wrapper around the `EcotoxSystems.jl` ODE_simulator.
 """
 function ODE_simulator(
     p::ComponentVector; 
-    model = AmphiDEB_ODE!, 
+    model = AmphiDEB_ODE_M1!, 
     callbacks = AmphODE_callbacks(), 
     kwargs...
     )
