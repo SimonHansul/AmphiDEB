@@ -43,7 +43,7 @@ AmphiDEB.calc_S_max_juv(defaultparams.spc)
 
     p.glb.dX_in = 15.
 
-    @time sim = ODE_simulator(
+    @time global sim = ODE_simulator(
             p, 
             returntype = EcotoxSystems.dataframe, 
             alg = Tsit5()

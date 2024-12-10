@@ -38,7 +38,7 @@ AmphiDEB.calc_S_max_juv(defaultparams.spc)
 @testset "Default parameters" begin 
     global p = deepcopy(defaultparams)
 
-    p.glb.t_max = 60
+    p.glb.t_max = 365*2
     p.glb.pathogen_inoculation_time = Inf
 
     p.glb.dX_in = 15.
