@@ -198,7 +198,7 @@ function growth!(du, u, p, t)::Tuple{Real,Real}
         kappa * du.A, 
         du.M, 
         -(du.M / p.eta_SA - (1 - p.gamma) * kappa * du.A), 
-        eta_AS * u.y_j[1] * (1 - p.gamma) * (kappa * du.A - du.M)
+        eta_AS * u.y_j[1] * ((1 - p.gamma) * kappa * du.A - du.M)
     )
 
     #### somatic growth for metamorphs ####
@@ -242,7 +242,7 @@ Metamorphic reserve is accumulated during larval development and depleted during
 function metamorphic_reserve!(du, u, p, t, eta_AS, kappa)::Nothing
     
     # the metamorphic reserve is fueled by the gamma*kappa-fraction of the assimilation flux
-    dE_mt_lrv = (1 - p.gamma) * (kappa * du.A - du.M) # before metamorphosis, reserve is built up
+    dE_mt_lrv = (1 - p.gamma) * kappa * du.A - du.M # before metamorphosis, reserve is built up
     dE_mt_mt = -(du.H + du.J + du.M) # during metamorphosis, while there is still E_mt left, it will be used to fuel maintenance and maturation
     du.E_mt = u.larva * dE_mt_lrv + u.metamorph * dE_mt_mt
     du.E_mt_max = u.larva * du.E_mt

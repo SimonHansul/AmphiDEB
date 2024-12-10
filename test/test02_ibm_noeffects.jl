@@ -39,7 +39,7 @@ import EcotoxSystems: default_individual_rules!
 
 norm(x) = x ./ sum(x)
 
-@testset "Projection exponential growth" begin
+@testset "Projecting exponential growth" begin
     p = deepcopy(AmphiDEB.defaultparams)
 
     p.glb.t_max = 365*2
@@ -74,6 +74,6 @@ norm(x) = x ./ sum(x)
         bottommargin = 5mm, topmargin = 5mm, leftmargin = 5mm, rightmargin = 5mm
     )
     
-    plot(p_glb, p_spc, layout = grid(1,2, widths = norm([2/3, 1])), size = (1000,600))
+    plot(p_glb, p_spc, layout = grid(1,2, widths = norm([2/3, 1])), size = (1000,600)) |> display
 end
 

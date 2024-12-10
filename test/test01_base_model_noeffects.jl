@@ -1,3 +1,4 @@
+using Pkg; Pkg.activate("test")
 using Test
 using Distributions
 using OrdinaryDiffEq
@@ -20,7 +21,6 @@ import EcotoxSystems: DEBODE_global!
 import EcotoxSystems: sig
 import EcotoxSystems: constrmvec
 
-
 # Amphibian model without chemical or pathogen effects 
 Amphibian_noeffects!(du, u, p, t) = begin
     DEBODE_global!(du, u, p, t)
@@ -34,7 +34,6 @@ end
 
 defaultparams.spc.dI_max_juv = 1
 AmphiDEB.calc_S_max_juv(defaultparams.spc)
-
 
 @testset "Default parameters" begin 
     global p = deepcopy(defaultparams)
