@@ -25,9 +25,15 @@ function Pathogen_Infection!(du, u, p, t)::Nothing
     du.pth.P_Z -= gamma * u.pth.P_Z # encystment
 
     # relative response to pathogen 
+    try
+    
+        @. u.ind.y_jP = EcotoxSystems.LL2(u.ind.P_S/(Complex(u.ind.S^(2/3)).re), p.ind.e_P, p.ind.b_P)
 
-    #@. u.ind.y_jP = EcotoxSystems.LL2(u.ind.P_S/(u.ind.S^(2/3)), p.ind.e_P, p.ind.b_P)
-  
+    catch
+        println((u.ind.S))
+        error()
+    end
+
     u.ind.y_jP[2] /= u.ind.y_jP[2]^2 # converting a monotonically decreasing to increasing response
 
     return nothing

@@ -28,36 +28,45 @@ AmphiDEB.calc_S_max_juv(defaultparams.spc)
     global p = deepcopy(defaultparams)
 
     p.glb.t_max = 60
-    #p.glb.pathogen_inoculation_time = Inf
+    p.glb.pathogen_inoculation_time = 20.
 
     p.glb.dX_in = 15.
 
-    @time global sim = ODE_simulator(
+    p.spc.Z = Dirac(1.)
+    p.spc.e_z[3] = 1. 
+    p.spc.b_z[3] = .1
+
+    sim = @replicates ODE_simulator(
             p, 
             returntype = EcotoxSystems.dataframe, 
             alg = Tsit5()
-            );
-
+            ) 10
+        
     sim[!,:E_mt_rel] = sim.E_mt ./ (sim.S + sim.E_mt)
-    sim[!,:dI] = vcat(0, diff(sim.I))
     sim[!,:W_tot] = sim.S .+ sim.E_mt 
     
-    plt = plot_statevars(
-        sim, 
-        [:S, :H, :E_mt_rel, :R, :X_emb, :J, :R, :dI, :W_tot, :f_X], 
+    plt = @df sim plot(
+        plot(:t, :S, group = :replicate),
+        plot(:t, :E_mt, group = :replicate),
         xrotation = 45
         )
-    hline!([p.spc.H_j1], subplot=2, color = :gray, linestyle = :dash)
-
     display(plt)
+
+    #TODO: add proper test conditions
 
     #@test 55 <= maximum(sim.S) <= 60 # check final structural mass
     #@test ([isapprox(1, sum([r.embryo, r.larva, r.metamorph, r.juvenile, r.adult])) for r in eachrow(sim)] |> unique)==[1] # check that exactly one life stage at a time is "true"
 end
 
-using BenchmarkTools
-@benchmark ODE_simulator(
+
+
+sim = exposure(p -> ODE_simulator(
     p, 
     returntype = EcotoxSystems.dataframe, 
-    alg = nothing
+    alg = Tsit5()
+    ), 
+    p,
+    [0. 0.5 1. 2.]
     )
+
+
