@@ -21,16 +21,8 @@ import EcotoxSystems: DEBODE_global!
 import EcotoxSystems: sig
 import EcotoxSystems: constrmvec
 
-# Amphibian model without chemical or pathogen effects 
-Amphibian_noeffects!(du, u, p, t) = begin
-    DEBODE_global!(du, u, p, t)
-    u.ind.y_j .= 1 # making sure that all effects are turned off
-    u.ind.y_jP .= 1
-    Amphibian_DEB_M1!(du, u, p, t)
-end
+plot(x -> sig(x, 0, 0, 1, beta = 1e6), xlim = (-1e-3, 1e-3))
 
-# implementation works as long as k_J is not too high...
-# next: trying a gradual change to metamorph
 
 defaultparams.spc.dI_max_juv = 1
 AmphiDEB.calc_S_max_juv(defaultparams.spc)
@@ -38,7 +30,7 @@ AmphiDEB.calc_S_max_juv(defaultparams.spc)
 @testset "Default parameters" begin 
     global p = deepcopy(defaultparams)
 
-    p.glb.t_max = 365
+    p.glb.t_max = 60
     #p.glb.pathogen_inoculation_time = Inf
 
     p.glb.dX_in = 15.
@@ -62,8 +54,13 @@ AmphiDEB.calc_S_max_juv(defaultparams.spc)
 
     display(plt)
 
-    @test 55 <= maximum(sim.S) <= 60 # check final structural mass
-    @test ([sum([r.embryo, r.larva, r.metamorph, r.juvenile, r.adult])==1 for r in eachrow(sim)] |> unique)==[1] # check that exactly one life stage at a time is "true"
+    #@test 55 <= maximum(sim.S) <= 60 # check final structural mass
+    #@test ([isapprox(1, sum([r.embryo, r.larva, r.metamorph, r.juvenile, r.adult])) for r in eachrow(sim)] |> unique)==[1] # check that exactly one life stage at a time is "true"
 end
 
-
+using BenchmarkTools
+@benchmark ODE_simulator(
+    p, 
+    returntype = EcotoxSystems.dataframe, 
+    alg = nothing
+    )

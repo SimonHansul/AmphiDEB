@@ -21,3 +21,15 @@ function ODE_simulator(
         kwargs...
     )
 end
+
+
+function IBM_simulator(
+    p::ComponentVector;
+    individual_ode! = AmphiDEB_ODE_M1!, 
+    init_individual_statevars = initalize_individual_statevars,
+    callbacks = AmphODE_callbacks(), 
+    statevars_init = initialize_statevars,
+    kwargs...
+    )
+
+end
