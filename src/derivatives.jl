@@ -3,7 +3,7 @@
 
 function Pathogen_growth!(du, u, p, t)::Nothing
     
-    du.pth.P_Z = - p.pth.mu * u.pth.P_Z # change in zoospores in environment
+    du.glb.P_Z = - p.pth.mu * u.glb.P_Z # change in zoospores in environment
     
     return nothing
 end
@@ -18,11 +18,11 @@ function Pathogen_Infection!(du, u, p, t)::Nothing
     gamma = p.pth.gamma 
 
     # growth and killing of sporangia 
-    du.ind.P_S = p.pth.v0 * gamma * u.pth.P_Z + p.pth.v0 * p.pth.eta * p.pth.f * u.ind.P_S - (p.pth.sigma0 + p.pth.sigma1 * p.ind.Chi * u.ind.P_S) * u.ind.P_S
+    du.ind.P_S = p.pth.v0 * gamma * u.glb.P_Z + p.pth.v0 * p.pth.eta * p.pth.f * u.ind.P_S - (p.pth.sigma0 + p.pth.sigma1 * p.ind.Chi * u.ind.P_S) * u.ind.P_S
     
     # feedback with zoospore population 
-    du.pth.P_Z += p.pth.eta * (1-p.pth.f) * u.ind.P_S # release of spores
-    du.pth.P_Z -= gamma * u.pth.P_Z # encystment
+    du.glb.P_Z += p.pth.eta * (1-p.pth.f) * u.ind.P_S # release of spores
+    du.glb.P_Z -= gamma * u.glb.P_Z # encystment
 
     # relative response to pathogen 
     try
@@ -44,13 +44,13 @@ end
 
 condition_inoculation(u, t, integrator) = integrator.p.glb.pathogen_inoculation_time - t
 function effect_inoculation!(integrator) 
-    integrator.u.pth.P_Z = integrator.p.glb.pathogen_inoculation_dose
+    integrator.u.glb.P_Z = integrator.p.glb.pathogen_inoculation_dose
 end
 
 # definition of the callback for media renewals
 condition_renewal(u, t, integrator) = prod(integrator.p.glb.medium_renewals  .- t)  
 function effect_renewal!(integrator)
-    integrator.u.pth.P_Z = 0. # when renewal occurs, set zoospores to 0
+    integrator.u.glb.P_Z = 0. # when renewal occurs, set zoospores to 0
 end
 
 

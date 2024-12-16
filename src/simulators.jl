@@ -26,10 +26,20 @@ end
 function IBM_simulator(
     p::ComponentVector;
     individual_ode! = AmphiDEB_ODE_M1!, 
-    init_individual_statevars = initalize_individual_statevars,
-    callbacks = AmphODE_callbacks(), 
-    statevars_init = initialize_statevars,
+    individual_rules! = default_individual_rules!,
+    init_individual_statevars = initialize_individual_statevars,
+    global_rules! = EcotoxSystems.default_global_rules!,
+    global_ode! = EcotoxSystems.DEBODE_global!,
     kwargs...
+    )
+
+    EcotoxSystems.IBM_simulator(
+        p;
+        individual_ode! = individual_ode!,
+        init_individual_statevars = init_individual_statevars,
+        individual_rules! = individual_rules!,
+        global_ode! = global_ode!, 
+        global_rules! = global_rules!
     )
 
 end

@@ -17,6 +17,7 @@ include("derivatives.jl") # definition of derivatives which are used by all mode
 include("derivatives_M1.jl") # derivatives for model M1 (metamorphic reserve fuels obligatory processes)
 include("derivatives_M2.jl") # derivatives for model M2 (metamorphic reserve fuels 1-κ branch)
 include("statevars.jl") # setting up state variables
+include("individual_rules.jl")
 include("simulators.jl") # running simulations
 
 include("traits.jl") # functions to infer traits from parameters or simulation output (e.g. maximum size, age at birth, etc.)
