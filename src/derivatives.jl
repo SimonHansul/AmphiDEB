@@ -3,7 +3,7 @@
 
 function Pathogen_growth!(du, u, p, t)::Nothing
     
-    du.pth.P_Z = - p.pth.mu * u.pth.P_Z # change in zoospores in environment
+    du.glb.P_Z = - p.pth.mu * u.glb.P_Z # change in zoospores in environment
     
     return nothing
 end
@@ -18,11 +18,11 @@ function Pathogen_Infection!(du, u, p, t)::Nothing
     gamma = p.pth.gamma 
 
     # growth and killing of sporangia 
-    du.ind.P_S = p.pth.v0 * gamma * u.pth.P_Z + p.pth.v0 * p.pth.eta * p.pth.f * u.ind.P_S - (p.pth.sigma0 + p.pth.sigma1 * p.ind.Chi * u.ind.P_S) * u.ind.P_S
+    du.ind.P_S = p.pth.v0 * gamma * u.glb.P_Z + p.pth.v0 * p.pth.eta * p.pth.f * u.ind.P_S - (p.pth.sigma0 + p.pth.sigma1 * p.ind.Chi * u.ind.P_S) * u.ind.P_S
     
     # feedback with zoospore population 
-    du.pth.P_Z += p.pth.eta * (1-p.pth.f) * u.ind.P_S # release of spores
-    du.pth.P_Z -= gamma * u.pth.P_Z # encystment
+    du.glb.P_Z += p.pth.eta * (1-p.pth.f) * u.ind.P_S # release of spores
+    du.glb.P_Z -= gamma * u.glb.P_Z # encystment
 
     # relative response to pathogen 
 
@@ -38,21 +38,15 @@ end
 
 condition_inoculation(u, t, integrator) = integrator.p.glb.pathogen_inoculation_time - t
 function effect_inoculation!(integrator) 
-    integrator.u.pth.P_Z = integrator.p.glb.pathogen_inoculation_dose
+    integrator.u.glb.P_Z = integrator.p.glb.pathogen_inoculation_dose
 end
 
 # definition of the callback for media renewals
 condition_renewal(u, t, integrator) = prod(integrator.p.glb.medium_renewals  .- t)  
 function effect_renewal!(integrator)
-    integrator.u.pth.P_Z = 0. # when renewal occurs, set zoospores to 0
+    integrator.u.glb.P_Z = 0. # when renewal occurs, set zoospores to 0
 end
 
-
-"""
-    ODEcallbacks()
-
-Callbacks to use in the ODE system
-"""
 function AmphODE_callbacks()
 
     # life-stage callbacks are discontinued for this model atm, 
@@ -77,21 +71,17 @@ end
 function determine_life_stage!(du, u, p, t)::Nothing
 
     #TODO: between larvae and metamorphs, there should be a smooth transition using a sgmoid function depending on H
-    
+    # implementing this with a simple sigmoid switch causes numerical issues 
+    # maybe we need to spell it out as du/dt then, instead of directly modifying the state?
+
     u.embryo = u.X_emb > 0 # if there is still vitellus left, we are in embryo stage
     u.larva = (u.X_emb <= 0) && (u.H <= p.H_j1 * u.y_j[5]) # if the embryo is used up but the next maturity threshold is not reached, we are in larval stage
     u.metamorph =  (u.H > p.H_j1 * u.y_j[5]) && (u.E_mt > 0) # above the maturity threshold for Gosner stage 42, while there is still metamorphic reserve left, we are in metamorph stage
     u.juvenile = (u.H > p.H_j1 * u.y_j[5]) && (u.E_mt <= 0) && (u.H <= p.H_p) # after metamorphosis but below the threshold for puberty, we are in juvenile stage
     u.adult = u.H > p.H_p
 
-    # checking that life stage indicators are plausible
-    #TODO: remove this after rigorous testing -- probably will slow down the simulations
-
-    #@assert isapprox(u.embryo + u.larva + u.metamorph + u.juvenile + u.adult, 1, rtol = 1e-3) "One life stage at a time has to be true. \n Got embryo = $(u.embryo), larva = $(u.larva), metamorph = $(u.metamorph), juvenile = $(u.juvenile), adult = $(u.adult). Current states: \n $u"
-
     return nothing
 end
-
 
 # temperature correction
 function y_T!(du, u, p, t)::Nothing
@@ -100,7 +90,6 @@ function y_T!(du, u, p, t)::Nothing
 
     return nothing
 end
-
 
 """
     ingestion!(du, u, p, t)::Nothing

@@ -22,7 +22,6 @@ function ODE_simulator(
     )
 end
 
-
 function IBM_simulator(
     p::ComponentVector;
     individual_ode! = AmphiDEB_ODE_M1!, 
@@ -41,5 +40,4 @@ function IBM_simulator(
         global_ode! = global_ode!, 
         global_rules! = global_rules!
     )
-
 end

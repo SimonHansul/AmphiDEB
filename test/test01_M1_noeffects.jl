@@ -21,17 +21,6 @@ import EcotoxSystems: DEBODE_global!
 import EcotoxSystems: sig
 import EcotoxSystems: constrmvec
 
-# Amphibian model without chemical or pathogen effects 
-Amphibian_noeffects!(du, u, p, t) = begin
-    DEBODE_global!(du, u, p, t)
-    u.ind.y_j .= 1 # making sure that all effects are turned off
-    u.ind.y_jP .= 1
-    Amphibian_DEB_M1!(du, u, p, t)
-end
-
-# implementation works as long as k_J is not too high...
-# next: trying a gradual change to metamorph
-
 defaultparams.spc.dI_max_juv = 1
 AmphiDEB.calc_S_max_juv(defaultparams.spc)
 
@@ -40,7 +29,6 @@ AmphiDEB.calc_S_max_juv(defaultparams.spc)
 
     p.glb.t_max = 365
     #p.glb.pathogen_inoculation_time = Inf
-
     p.glb.dX_in = 15.
 
     @time global sim = ODE_simulator(
