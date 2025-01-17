@@ -15,7 +15,6 @@ using StatsBase
 include("default_params.jl") # default parameter sets
 include("derivatives.jl") # definition of derivatives which are used by all models
 include("derivatives_M1.jl") # derivatives for model M1 (metamorphic reserve fuels obligatory processes)
-include("derivatives_M2.jl") # derivatives for model M2 (metamorphic reserve fuels 1-κ branch)
 include("statevars.jl") # setting up state variables
 include("simulators.jl") # running simulations
 

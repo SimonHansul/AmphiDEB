@@ -22,25 +22,11 @@ import EcotoxSystems: constrmvec
 import EcotoxSystems: IBM_simulator
 
 
-# Amphibian model without chemical or pathogen effects 
-Amphibian_noeffects!(du, u, p, t) = begin
-
-    DEBODE_global!(du, u, p, t)
-    
-    u.ind.y_j .= 1 # making sure that all effects are turned off
-    u.ind.y_jP .= 1
-    
-    Amphibian_DEB_M1!(du, u, p, t)
-
-end
-
 import AmphiDEB: IBM_simulator
-import EcotoxSystems: default_individual_rules!
-
 norm(x) = x ./ sum(x)
 
 @testset "Projecting exponential growth" begin
-    p = deepcopy(AmphiDEB.defaultparams)
+    p = deepcopy(defaultparams)
 
     p.glb.t_max = 60.
     p.glb.dX_in = 100.
@@ -51,9 +37,8 @@ norm(x) = x ./ sum(x)
     p.spc.tau_R = 0 #365
     p.spc.h_S = 0.1
 
-    @time sim = IBM_simulator(
+    @time sim = AmphiDEB.IBM_simulator(
         p; 
-        individual_ode! = Amphibian_noeffects!, 
         init_individual_statevars = AmphiDEB.initialize_individual_statevars,
         showinfo = 60,  # update every 30 days
         saveat = 7, # saving weekly output

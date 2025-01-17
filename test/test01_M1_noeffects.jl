@@ -22,7 +22,7 @@ import EcotoxSystems: sig
 import EcotoxSystems: constrmvec
 
 defaultparams.spc.dI_max_juv = 1
-AmphiDEB.calc_S_max_juv(defaultparams.spc)
+
 
 #@testset "Default parameters" begin 
 begin
@@ -31,6 +31,10 @@ begin
     p.glb.t_max = 365
     #p.glb.pathogen_inoculation_time = Inf
     p.glb.dX_in = 15.
+
+    p.spc.dI_max_juv = rand(truncated(Normal(1, 0.1), 0, Inf))
+
+    S_max_anl = AmphiDEB.calc_S_max_juv(p.spc)
 
     @time global sim = ODE_simulator(
             p, 
@@ -51,7 +55,7 @@ begin
 
     display(plt)
 
-    # @test 55 <= maximum(sim.S) <= 60 # check final structural mass
-    # @test ([sum([r.embryo, r.larva, r.metamorph, r.juvenile, r.adult])==1 for r in eachrow(sim)] |> unique)==[1] # check that exactly one life stage at a time is "true"
+    @test 0.8*S_max_anl <= maximum(sim.S) <= 1.2*S_max_anl # check final structural mass
+    @test ([sum([r.embryo, r.larva, r.metamorph, r.juvenile, r.adult])==1 for r in eachrow(sim)] |> unique)==[1] # check that exactly one life stage at a time is "true"
 end
 
