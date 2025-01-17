@@ -61,10 +61,10 @@ AmphiDEB.calc_S_max_juv(defaultparams.spc)
     #@test ([isapprox(1, sum([r.embryo, r.larva, r.metamorph, r.juvenile, r.adult]), atol = 1e-3) for r in eachrow(sim)] |> unique)==[1] # check that exactly one life stage at a time is "true"
 end
 
-using BenchmarkTools
-@benchmark ODE_simulator(
-    p, 
-    returntype = EcotoxSystems.dataframe, 
-    alg = nothing
-    )
+# using BenchmarkTools
+# @benchmark ODE_simulator(
+#     p, 
+#     returntype = EcotoxSystems.dataframe, 
+#     alg = nothing
+#     )
 
