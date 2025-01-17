@@ -19,12 +19,12 @@ function initialize_individual_statevars(p::ComponentVector; kwargs...)::Compone
     )
 end
 
-function initialize_global_statevars(p) 
-    ComponentVector(
-        EcotoxSystems.initialize_global_statevars(p);
-        P_Z = 0.
-    )
-end
+
+initialize_global_statevars(p) = ComponentVector(
+    EcotoxSystems.initialize_global_statevars(p);
+    P_Z = 0
+)
+
 
 function initialize_statevars(p::ComponentVector)
 
@@ -36,3 +36,4 @@ function initialize_statevars(p::ComponentVector)
         ind = individual_statevars
     )
 end
+

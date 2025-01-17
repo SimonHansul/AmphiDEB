@@ -25,9 +25,15 @@ function Pathogen_Infection!(du, u, p, t)::Nothing
     du.glb.P_Z -= gamma * u.glb.P_Z # encystment
 
     # relative response to pathogen 
+    try
+    
+        @. u.ind.y_jP = EcotoxSystems.LL2(u.ind.P_S/(Complex(u.ind.S^(2/3)).re), p.ind.e_P, p.ind.b_P)
 
-    #@. u.ind.y_jP = EcotoxSystems.LL2(u.ind.P_S/(u.ind.S^(2/3)), p.ind.e_P, p.ind.b_P)
-  
+    catch
+        println((u.ind.S))
+        error()
+    end
+
     u.ind.y_jP[2] /= u.ind.y_jP[2]^2 # converting a monotonically decreasing to increasing response
 
     return nothing
@@ -71,14 +77,12 @@ end
 function determine_life_stage!(du, u, p, t)::Nothing
 
     #TODO: between larvae and metamorphs, there should be a smooth transition using a sgmoid function depending on H
-    # implementing this with a simple sigmoid switch causes numerical issues 
-    # maybe we need to spell it out as du/dt then, instead of directly modifying the state?
-
-    u.embryo = u.X_emb > 0 # if there is still vitellus left, we are in embryo stage
-    u.larva = (u.X_emb <= 0) && (u.H <= p.H_j1 * u.y_j[5]) # if the embryo is used up but the next maturity threshold is not reached, we are in larval stage
-    u.metamorph =  (u.H > p.H_j1 * u.y_j[5]) && (u.E_mt > 0) # above the maturity threshold for Gosner stage 42, while there is still metamorphic reserve left, we are in metamorph stage
-    u.juvenile = (u.H > p.H_j1 * u.y_j[5]) && (u.E_mt <= 0) && (u.H <= p.H_p) # after metamorphosis but below the threshold for puberty, we are in juvenile stage
-    u.adult = u.H > p.H_p
+    
+    u.embryo = sig(u.X_emb, 0, 0, 1, beta = 1e3) #u.X_emb > 0 # if there is still vitellus left, we are in embryo stage
+    u.larva = sig(u.X_emb, 0, 1, 0, beta = 1e3) * sig(u.H, p.H_j1 * u.y_j[5], 1, 0) #(u.H <= p.H_j1 * u.y_j[5]) # if the embryo is used up but the next maturity threshold is not reached, we are in larval stage
+    u.metamorph =  sig(u.H, p.H_j1 * u.y_j[5], 0, 1) * sig(u.E_mt, 0, 0, 1, beta = 1e3) # above the maturity threshold for Gosner stage 42, while there is still metamorphic reserve left, we are in metamorph stage
+    u.juvenile = sig(u.H, p.H_j1 * u.y_j[5], 0, 1) * sig(u.E_mt, 0, 1, 0, beta = 1e3) * sig(u.H, p.H_p, 1, 0) # after metamorphosis but below the threshold for puberty, we are in juvenile stage
+    u.adult = sig(u.H, p.H_p, 0, 1)
 
     return nothing
 end

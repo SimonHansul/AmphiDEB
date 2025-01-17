@@ -39,16 +39,18 @@ begin
     @time global sim = ODE_simulator(
             p, 
             returntype = EcotoxSystems.dataframe, 
+            saveat = 1/240,
             alg = Tsit5()
             );
 
     sim[!,:E_mt_rel] = sim.E_mt ./ (sim.S + sim.E_mt)
     sim[!,:dI] = vcat(0, diff(sim.I))
+    sim[!,:dI_rel] = sim.dI ./ (sim.S .^(2/3))
     sim[!,:W_tot] = sim.S .+ sim.E_mt 
     
     plt = plot_statevars(
         sim, 
-        [:S, :H, :E_mt_rel, :R, :X_emb, :J, :R, :dI, :W_tot, :f_X], 
+        [:S, :H, :E_mt_rel, :R, :X_emb, :J, :dI_rel, :W_tot, :f_X], 
         xrotation = 45
         )
     hline!([p.spc.H_j1], subplot=2, color = :gray, linestyle = :dash)

@@ -1,3 +1,5 @@
+using Pkg; Pkg.activate("test")
+
 using Test
 using Distributions
 using OrdinaryDiffEq
@@ -19,9 +21,6 @@ import EcotoxSystems: DEBODE_global!
 
 import EcotoxSystems: sig
 import EcotoxSystems: constrmvec
-import EcotoxSystems: IBM_simulator
-
-
 import AmphiDEB: IBM_simulator
 norm(x) = x ./ sum(x)
 
@@ -44,7 +43,6 @@ norm(x) = x ./ sum(x)
         saveat = 7, # saving weekly output
         dt = 1 # daily timestep - better to turn down to hourly for proper results
         )
-    
     
     @test 2500 <= sim.glb.N[end] <= 3500 # expected abundance after 2 years
 
