@@ -47,15 +47,6 @@ end
 
 function AmphODE_callbacks()
 
-    # life-stage callbacks are discontinued for this model atm, 
-    # I added the definition of life stages directly to the derivatives
-    # should also consider to define the life stage tranistions as smooth sigmoid switches, at least for metamorphs
-
-    #cb_larva = ContinuousCallback(condition_larva, effect_larva!)
-    #cb_metamorph = ContinuousCallback(condition_metamorph, effect_metamorph!)
-    #cb_juvenile = ContinuousCallback(condition_juvenile, effect_juvenile!)
-    #cb_adult = ContinuousCallback(condition_adult, effect_adult!)
-
     cb_inoculation = ContinuousCallback(condition_inoculation, effect_inoculation!)
     cb_renewal = ContinuousCallback(condition_renewal, effect_renewal!)
 
@@ -68,8 +59,6 @@ end
 
 function determine_life_stage!(du, u, p, t)::Nothing
 
-    #TODO: between larvae and metamorphs, there should be a smooth transition using a sgmoid function depending on H
-    
     u.embryo = sig(u.X_emb, 0, 0, 1, beta = 1e3) #u.X_emb > 0 # if there is still vitellus left, we are in embryo stage
     u.larva = sig(u.X_emb, 0, 1, 0, beta = 1e3) * sig(u.H, p.H_j1 * u.y_j[5], 1, 0) #(u.H <= p.H_j1 * u.y_j[5]) # if the embryo is used up but the next maturity threshold is not reached, we are in larval stage
     u.metamorph =  sig(u.H, p.H_j1 * u.y_j[5], 0, 1) * sig(u.E_mt, 0, 0, 1, beta = 1e3) # above the maturity threshold for Gosner stage 42, while there is still metamorphic reserve left, we are in metamorph stage
@@ -97,7 +86,7 @@ Hence, we have `u.ind`, `u.glb`, `p.ind`, etc., instead of simply `u` and `p`.
 function ingestion!(du, u, p, t)::Nothing
 
     K_X = ((u.ind.larva + u.ind.metamorph) * p.ind.K_X_lrv) + ((u.ind.juvenile + u.ind.adult) * p.ind.K_X_juv)
-    u.ind.f_X = (u.glb.X / p.glb.V_patch) / ((u.glb.X / p.glb.V_patch) + K_X)
+    @. u.ind.f_X = (u.glb.X / p.glb.V_patch) / ((u.glb.X / p.glb.V_patch) + K_X)
 
     dI_emb = u.ind.embryo * (Complex(u.ind.S)^(2/3)).re * p.ind.dI_max_emb * u.ind.y_T
     dI_mt = u.ind.metamorph * u.ind.f_X * p.ind.dI_max_lrv * (u.ind.E_mt / u.ind.E_mt_max) * (Complex(u.ind.S)^(2/3)).re * u.ind.y_T
@@ -137,7 +126,6 @@ function reproduction!(du, u, p, t, kappa)::Nothing
 
     return nothing
 end
-
 
 
 """
@@ -223,7 +211,6 @@ function metamorphic_reserve!(du, u, p, t, eta_AS, kappa)::Nothing
 
     return nothing
 end
-
 
 function AmphiDEB_ODE!(du, u, p, t)::Nothing
 

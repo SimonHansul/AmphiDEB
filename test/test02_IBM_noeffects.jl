@@ -35,7 +35,7 @@ norm(x) = x ./ sum(x)
     p.spc.Z = truncated(Normal(1, 0.1), 0, Inf)
     p.spc.tau_R = 0 #365
     p.spc.h_S = 0.1
-
+    
     @time sim = AmphiDEB.IBM_simulator(
         p; 
         showinfo = 60,  # update every 30 days
