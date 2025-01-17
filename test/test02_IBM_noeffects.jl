@@ -38,7 +38,6 @@ norm(x) = x ./ sum(x)
 
     @time sim = AmphiDEB.IBM_simulator(
         p; 
-        init_individual_statevars = AmphiDEB.initialize_individual_statevars,
         showinfo = 60,  # update every 30 days
         saveat = 7, # saving weekly output
         dt = 1 # daily timestep - better to turn down to hourly for proper results

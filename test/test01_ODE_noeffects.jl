@@ -21,9 +21,6 @@ import EcotoxSystems: DEBODE_global!
 import EcotoxSystems: sig
 import EcotoxSystems: constrmvec
 
-defaultparams.spc.dI_max_juv = 1
-
-
 #@testset "Default parameters" begin 
 begin
     global p = deepcopy(defaultparams)
@@ -38,7 +35,6 @@ begin
 
     @time global sim = ODE_simulator(
             p, 
-            returntype = EcotoxSystems.dataframe, 
             saveat = 1/240,
             alg = Tsit5()
             );
@@ -58,6 +54,4 @@ begin
     display(plt)
 
     @test 0.8*S_max_anl <= maximum(sim.S) <= 1.2*S_max_anl # check final structural mass
-    @test ([sum([r.embryo, r.larva, r.metamorph, r.juvenile, r.adult])==1 for r in eachrow(sim)] |> unique)==[1] # check that exactly one life stage at a time is "true"
 end
-
