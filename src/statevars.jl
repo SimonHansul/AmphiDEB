@@ -28,7 +28,7 @@ end
 
 function initialize_statevars(p::ComponentVector)
 
-    global_statevars = ComponentVector(EcotoxSystems.initialize_global_statevars(p))
+    global_statevars = initialize_global_statevars(p)
     individual_statevars = initialize_individual_statevars(p)
     
     return ComponentVector(

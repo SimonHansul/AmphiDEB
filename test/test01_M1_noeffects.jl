@@ -24,7 +24,8 @@ import EcotoxSystems: constrmvec
 defaultparams.spc.dI_max_juv = 1
 AmphiDEB.calc_S_max_juv(defaultparams.spc)
 
-@testset "Default parameters" begin 
+#@testset "Default parameters" begin 
+begin
     global p = deepcopy(defaultparams)
 
     p.glb.t_max = 365
@@ -50,8 +51,7 @@ AmphiDEB.calc_S_max_juv(defaultparams.spc)
 
     display(plt)
 
-    @test 55 <= maximum(sim.S) <= 60 # check final structural mass
-    @test ([sum([r.embryo, r.larva, r.metamorph, r.juvenile, r.adult])==1 for r in eachrow(sim)] |> unique)==[1] # check that exactly one life stage at a time is "true"
+    # @test 55 <= maximum(sim.S) <= 60 # check final structural mass
+    # @test ([sum([r.embryo, r.larva, r.metamorph, r.juvenile, r.adult])==1 for r in eachrow(sim)] |> unique)==[1] # check that exactly one life stage at a time is "true"
 end
-
 

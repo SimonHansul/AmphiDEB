@@ -2,9 +2,17 @@
 """
     calc_S_max_juv(spc::ComponentVector)
 
-Calculates maximum structural mass of juveniles from parameters. 
+Calculates maximum structural mass of juveniles and adults from parameters. 
 """
 calc_S_max_juv(spc::ComponentVector) = ((spc.kappa_juv * spc.dI_max_juv * spc.eta_IA) / spc.k_M_juv)^3
+
+"""
+    calc_S_max_ad(spc::ComponentVector)
+
+Alias for `calc_S_max_juv`.
+"""
+calc_S_max_ad(spc::ComponentVector) = calc_S_max_juv(spc)
+
 
 """
     calc_a_B(sim::AbstractDataFrame)
