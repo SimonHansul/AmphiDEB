@@ -22,18 +22,20 @@ import EcotoxSystems: sig
 import EcotoxSystems: constrmvec
 
 #@testset "Default parameters" begin 
+# FIXME: dR is way too high?
 begin
     global p = deepcopy(defaultparams)
 
     p.glb.t_max = 365
     p.glb.pathogen_inoculation_time = Inf
     p.glb.dX_in = 15.
+    p.spc.H_p = 50.
 
     p.spc.dI_max_juv = rand(truncated(Normal(1, 0.1), 0, Inf))
 
     S_max_anl = AmphiDEB.calc_S_max_juv(p.spc)
 
-    @time global sim = ODE_simulator(
+    @time global sim = AmphiDEB.ODE_simulator(
             p, 
             saveat = 1/240,
             alg = Tsit5()
@@ -56,10 +58,3 @@ begin
     @test 0.8*S_max_anl <= maximum(sim.S) <= 1.2*S_max_anl # check final structural mass
 end
 
-
-@df @subset(sim, :t .< 60) plot(
-    plot(:t, vcat(0, diff(:I)), xlabel = "t", ylabel = "dI"), 
-    plot(:t, [:S :E_mt :S .+ :E_mt], xlabel = "t", ylabel = "W"), 
-    plot(:t, vcat(0, diff(:H)), xlabel = "t", ylabel = "H"), 
-    size = (800,800), thickness_scaling = 1.2
-)

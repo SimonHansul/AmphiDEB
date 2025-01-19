@@ -15,6 +15,7 @@ function ODE_simulator(
     model = AmphiDEB_ODE!, 
     callbacks = AmphODE_callbacks(), 
     statevars_init = initialize_statevars,
+    gen_ind_params = p -> EcotoxSystems.generate_individual_params(p; pth = p.pth),
     kwargs...
     )
 
@@ -23,7 +24,7 @@ function ODE_simulator(
         model = model,
         statevars_init = statevars_init,
         tstops = [p.glb.pathogen_inoculation_time, p.glb.medium_renewals...],
-        ind_params_init = p -> EcotoxSystems.generate_individual_params(p; pth = p.pth),
+        gen_ind_params = gen_ind_params,
         callbacks = callbacks,
         kwargs...
     )
@@ -42,6 +43,7 @@ function IBM_simulator(
     init_individual_statevars = initialize_individual_statevars,
     individual_ode! = AmphiDEB_individual!, 
     individual_rules! = default_individual_rules!,
+    gen_ind_params = p -> EcotoxSystems.generate_individual_params(p; pth = p.pth),
 
     kwargs...
     )
@@ -58,6 +60,7 @@ function IBM_simulator(
         individual_ode! = individual_ode!,
         init_individual_statevars = init_individual_statevars,
         individual_rules! = individual_rules!,
+        gen_ind_params = gen_ind_params,
 
         kwargs...
     )

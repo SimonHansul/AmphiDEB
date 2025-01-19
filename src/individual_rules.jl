@@ -16,7 +16,8 @@ function default_individual_rules!(
     # this is basically only a sanity check, and the actual starvation rules should be assessed on a species-by-species basis
     ind.S_max_hist = max(ind.S, ind.S_max_hist)
 
-    if ((ind.S/ind.S_max_hist) < p.ind.S_rel_crit) && (rand() <= exp(-p.ind.h_S * m.dt))
+    if ((ind.S/ind.S_max_hist) < p.ind.S_rel_crit) && (rand() > exp(-p.ind.h_S * m.dt))
+        println((p.ind.h_S, m.dt, xrand, xrand < exp(-p.ind.h_S * m.dt)))
         ind.cause_of_death = 2.
     end
 
@@ -29,14 +30,15 @@ function default_individual_rules!(
         let num_offspring = trunc(ind.R / p.ind.X_emb_int)
             for _ in 1:num_offspring
                 m.idcount += 1 # increment individual counter
-                push!(m.individuals, EcotoxSystems.Individual( # create new individual and push to individuals vector
+                push!(m.individuals, EcotoxSystems.DEBIndividual( # create new individual and push to individuals vector
                     m.p,
                     m.u.glb;
                     id = m.idcount,
                     cohort = Int(ind.cohort + 1),
                     individual_ode! = a.individual_ode!,
                     individual_rules! = a.individual_rules!,
-                    init_individual_statevars = a.init_individual_statevars
+                    init_individual_statevars = a.init_individual_statevars,
+                    gen_ind_params = a.generate_individual_params
                     )
                 )
                 ind.R -= p.ind.X_emb_int # decrease reproduction buffer
