@@ -17,7 +17,6 @@ function default_individual_rules!(
     ind.S_max_hist = max(ind.S, ind.S_max_hist)
 
     if ((ind.S/ind.S_max_hist) < p.ind.S_rel_crit) && (rand() > exp(-p.ind.h_S * m.dt))
-        println((p.ind.h_S, m.dt, xrand, xrand < exp(-p.ind.h_S * m.dt)))
         ind.cause_of_death = 2.
     end
 
