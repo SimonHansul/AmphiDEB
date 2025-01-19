@@ -24,30 +24,42 @@ function ODE_simulator(
         statevars_init = statevars_init,
         tstops = [p.glb.pathogen_inoculation_time, p.glb.medium_renewals...],
         ind_params_init = p -> EcotoxSystems.generate_individual_params(p; pth = p.pth),
-        callbacks = callbacks, 
+        callbacks = callbacks,
         kwargs...
     )
 end
 
 function IBM_simulator(
+    # parameters
     p::ComponentVector;
-    individual_ode! = AmphiDEB_ODE!, 
-    individual_rules! = default_individual_rules!,
+
+    # default global model
     init_global_statevars = initialize_global_statevars,
-    init_individual_statevars = initialize_individual_statevars,
-    global_rules! = EcotoxSystems.default_global_rules!,
     global_ode! = EcotoxSystems.DEBODE_global!,
+    global_rules! = EcotoxSystems.default_global_rules!,
+    
+    # default individual model
+    init_individual_statevars = initialize_individual_statevars,
+    individual_ode! = AmphiDEB_individual!, 
+    individual_rules! = default_individual_rules!,
+
     kwargs...
     )
 
     EcotoxSystems.IBM_simulator(
         p;
-        individual_ode! = individual_ode!,
+
+        # global model
         init_global_statevars = init_global_statevars,
+        global_ode! = global_ode!, 
+        global_rules! = global_rules!,
+        
+        # individual model
+        individual_ode! = individual_ode!,
         init_individual_statevars = init_individual_statevars,
         individual_rules! = individual_rules!,
-        global_ode! = global_ode!, 
-        global_rules! = global_rules!
+
+        kwargs...
     )
 
 end

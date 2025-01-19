@@ -16,12 +16,6 @@ using Revise
 
 @time import AmphiDEB: defaultparams, ODE_simulator, Amphibian_DEB!, AmphiDEB_ODE!
 using AmphiDEB
-using EcotoxSystems
-import EcotoxSystems: DEBODE_global!
-
-import EcotoxSystems: sig
-import EcotoxSystems: constrmvec
-import AmphiDEB: IBM_simulator
 norm(x) = x ./ sum(x)
 
 @testset "Projecting exponential growth" begin
@@ -45,7 +39,12 @@ norm(x) = x ./ sum(x)
     
     @test 2500 <= sim.glb.N[end] <= 3500 # expected abundance after 2 years
 
-    p_glb = @df sim.glb plot(:t, :N, xrotation = 45, xlabel = "Time [d]", ylabel = "N", title = "Abundance", leftmargin = 5mm)
+    p_glb = @df sim.glb plot(
+        :t, :N, 
+        xrotation = 45, 
+        xlabel = "Time [d]", ylabel = "N", title = "Abundance", 
+        leftmargin = 5mm
+        )
 
     p_spc = @df sim.spc plot(
         groupedlineplot(:t, :S, :cohort, ylabel = "S", title = "Structural mass"), 
@@ -59,3 +58,8 @@ norm(x) = x ./ sum(x)
     plot(p_glb, p_spc, layout = grid(1,2, widths = norm([2/3, 1])), size = (1000,600)) |> display
 end
 
+# FIXME: pth not in parameters 
+#   shouldn't be there in the first place...
+#       wrong default individual ODE in IBM_simulator!
+#       error moves to pathogen_infection --> here we do need pathogen params
+#       AmhpiDEB model needs it's own generate_individual_params function!

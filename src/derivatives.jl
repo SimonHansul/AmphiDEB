@@ -66,15 +66,14 @@ function AmphODE_callbacks()
 
 end
 
+# definition of life stages with sigmoid functions
 function determine_life_stage!(du, u, p, t)::Nothing
 
-    #TODO: between larvae and metamorphs, there should be a smooth transition using a sgmoid function depending on H
-    
-    u.embryo = sig(u.X_emb, 0, 0, 1, beta = 1e3) #u.X_emb > 0 # if there is still vitellus left, we are in embryo stage
-    u.larva = sig(u.X_emb, 0, 1, 0, beta = 1e3) * sig(u.H, p.H_j1 * u.y_j[5], 1, 0) #(u.H <= p.H_j1 * u.y_j[5]) # if the embryo is used up but the next maturity threshold is not reached, we are in larval stage
+    u.embryo = sig(u.X_emb, 0, 0, 1, beta = 1e3) # if there is still vitellus left, we are in embryo stage
+    u.larva = sig(u.X_emb, 0, 1, 0, beta = 1e3) * sig(u.H, p.H_j1 * u.y_j[5], 1, 0) # if the embryo is used up but the next maturity threshold is not reached, we are in larval stage
     u.metamorph =  sig(u.H, p.H_j1 * u.y_j[5], 0, 1) * sig(u.E_mt, 0, 0, 1, beta = 1e3) # above the maturity threshold for Gosner stage 42, while there is still metamorphic reserve left, we are in metamorph stage
     u.juvenile = sig(u.H, p.H_j1 * u.y_j[5], 0, 1) * sig(u.E_mt, 0, 1, 0, beta = 1e3) * sig(u.H, p.H_p, 1, 0) # after metamorphosis but below the threshold for puberty, we are in juvenile stage
-    u.adult = sig(u.H, p.H_p, 0, 1)
+    u.adult = sig(u.H, p.H_p, 0, 1) # adult stage is reached beyond maturity threshold H_p
 
     return nothing
 end
@@ -137,8 +136,6 @@ function reproduction!(du, u, p, t, kappa)::Nothing
 
     return nothing
 end
-
-
 
 """
     growth!(du, u, p, t)::Tuple{Real,Real}
@@ -224,7 +221,6 @@ function metamorphic_reserve!(du, u, p, t, eta_AS, kappa)::Nothing
     return nothing
 end
 
-
 function AmphiDEB_ODE!(du, u, p, t)::Nothing
 
     EcotoxSystems.DEBODE_global!(du, u, p, t)
@@ -237,8 +233,8 @@ end
 function AmphiDEB_individual!(du, u, p, t)::Nothing
 
     EcotoxSystems.TKTD_mix_IA!(du, u, p, t) # TKTD following default model
-    Pathogen_Infection!(du, u, p, t) 
-    Amphibian_DEB!(du, u, p, t)
+    Pathogen_Infection!(du, u, p, t) # infection, release of zoospores and relative response to sporangia density
+    Amphibian_DEB!(du, u, p, t) # 
 
     return nothing
 end
