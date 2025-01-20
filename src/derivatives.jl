@@ -103,10 +103,10 @@ end
 function determine_life_stage!(du, u, p, t)::Nothing
 
     u.embryo = sig(u.X_emb, 0, 0, 1, beta = 1e3) # if there is still vitellus left, we are in embryo stage
-    u.larva = sig(u.X_emb, 0, 1, 0, beta = 1e3) * sig(u.H, p.H_j1 * u.y_j[5], 1, 0) # if the embryo is used up but the next maturity threshold is not reached, we are in larval stage
-    u.metamorph =  sig(u.H, p.H_j1 * u.y_j[5], 0, 1) * sig(u.E_mt, 0, 0, 1, beta = 1e3) # above the maturity threshold for Gosner stage 42, while there is still metamorphic reserve left, we are in metamorph stage
-    u.juvenile = sig(u.H, p.H_j1 * u.y_j[5], 0, 1) * sig(u.E_mt, 0, 1, 0, beta = 1e3) * sig(u.H, p.H_p, 1, 0) # after metamorphosis but below the threshold for puberty, we are in juvenile stage
-    u.adult = sig(u.H, p.H_p, 0, 1) # adult stage is reached beyond maturity threshold H_p
+    u.larva = sig(u.X_emb, 0, 1, 0, beta = 1e3) * sig(u.H, p.H_j1 * u.y_j[5], 1, 0, beta = 1e7) # if the embryo is used up but the next maturity threshold is not reached, we are in larval stage
+    u.metamorph =  sig(u.H, p.H_j1 * u.y_j[5], 0, 1, beta = 1e7) * sig(u.E_mt, 0, 0, 1, beta = 1e3) # above the maturity threshold for Gosner stage 42, while there is still metamorphic reserve left, we are in metamorph stage
+    u.juvenile = sig(u.H, p.H_j1 * u.y_j[5], 0, 1, beta = 1e3) * sig(u.E_mt, 0, 1, 0, beta = 1e3) * sig(u.H, p.H_p, 1, 0, beta = 1e3) # after metamorphosis but below the threshold for puberty, we are in juvenile stage
+    u.adult = sig(u.H, p.H_p, 0, 1, beta = 1e3) # adult stage is reached beyond maturity threshold H_p
 
     return nothing
 end

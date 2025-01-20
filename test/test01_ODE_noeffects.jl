@@ -21,9 +21,8 @@ import EcotoxSystems: DEBODE_global!
 import EcotoxSystems: sig
 import EcotoxSystems: constrmvec
 
-#@testset "Default parameters" begin 
-# FIXME: dR is way too high?
-begin
+
+@testset "Default parameters" begin
     global p = deepcopy(defaultparams)
 
     p.glb.t_max = 365*2
@@ -55,4 +54,3 @@ begin
 
     @test 0.8*S_max_anl <= maximum(sim.S) <= 1.2*S_max_anl # check final structural mass
 end
-
