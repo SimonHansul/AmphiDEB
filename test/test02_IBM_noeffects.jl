@@ -23,13 +23,13 @@ norm(x) = x ./ sum(x)
 @testset "Projecting exponential growth" begin
     global p = deepcopy(defaultparams)
 
-    p.glb.t_max = 365*10
+    p.glb.t_max = 365*2
     p.glb.dX_in = 1000.
     p.glb.k_V = 0.
     p.glb.N0 = 10
 
     p.spc.Z = truncated(Normal(1, 0.1), 0, Inf)
-    p.spc.tau_R = 365
+    p.spc.tau_R = 1
     p.spc.h_S = 0.
     p.spc.H_p = 50.
 
@@ -61,17 +61,16 @@ norm(x) = x ./ sum(x)
     plot(p_glb, p_spc, layout = grid(1,2, widths = norm([2/3, 1])), size = (1000,600)) |> display
 end
 
-
 @testset "Simulation with density-dependence" begin
     global p = deepcopy(defaultparams)
 
     p.glb.t_max = 365*3
-    p.glb.dX_in = 1000.
+    p.glb.dX_in = 500.
     p.glb.k_V = 0.
     p.glb.N0 = 10
 
     p.spc.Z = truncated(Normal(1, 0.1), 0, Inf)
-    p.spc.tau_R = 365
+    p.spc.tau_R = 2
     p.spc.h_S = exp(-0.5)
     p.spc.H_p = 50.
 

@@ -26,9 +26,9 @@ import EcotoxSystems: constrmvec
 begin
     global p = deepcopy(defaultparams)
 
-    p.glb.t_max = 365
+    p.glb.t_max = 365*2
     p.glb.pathogen_inoculation_time = Inf
-    p.glb.dX_in = 15.
+    p.glb.dX_in = 20.
     p.spc.H_p = 50.
 
     p.spc.dI_max_juv = rand(truncated(Normal(1, 0.1), 0, Inf))
