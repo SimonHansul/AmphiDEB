@@ -11,3 +11,10 @@
 ### v0.1.3
 
 - Changed all life stage transitions to sigmoid functions and tweaked betas to optimize performance
+
+### v0.1.4
+
+- Updated dependencies
+- Adjusted slopes for life stage transitions
+- Some optimizations in TKTD submodel (can be improved further)
+- Worked towards proper IBM tests
