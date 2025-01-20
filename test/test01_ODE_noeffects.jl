@@ -31,8 +31,6 @@ begin
     p.glb.dX_in = 20.
     p.spc.H_p = 50.
 
-    p.spc.dI_max_juv = rand(truncated(Normal(1, 0.1), 0, Inf))
-
     S_max_anl = AmphiDEB.calc_S_max_juv(p.spc)
 
     @time global sim = AmphiDEB.ODE_simulator(

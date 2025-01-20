@@ -12,9 +12,8 @@ using StatsBase
 
 using Revise
 
-
 include("test01_ODE_noeffects.jl")
-#include("test02_M1_IBM_noeffects.jl")
+include("test02_IBM_noeffects.jl")
 
 
 #include("test02_pathogens.jl")

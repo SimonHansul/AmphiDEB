@@ -51,7 +51,8 @@ AmphiDEB.calc_S_max_juv(defaultparams.spc)
     plt = @df sim plot(
         plot(:t, :S, group = :C_W_1),
         plot(:t, :E_mt, group = :C_W_1),
-        xrotation = 45
+        xrotation = 45, 
+        xlabel = "t", ylabel = ["S" "E_mt"], leg = [:topleft false], legendtitle = "C_W"
         )
     display(plt)
 
@@ -60,30 +61,3 @@ AmphiDEB.calc_S_max_juv(defaultparams.spc)
     #@test 55 <= maximum(sim.S) <= 60 # check final structural mass
     #@test ([isapprox(1, sum([r.embryo, r.larva, r.metamorph, r.juvenile, r.adult])) for r in eachrow(sim)] |> unique)==[1] # check that exactly one life stage at a time is "true"
 end
-
-
-
-sim = exposure(p -> ODE_simulator(
-    p, 
-    returntype = EcotoxSystems.dataframe, 
-    alg = Tsit5()
-    ), 
-    p,
-    [0. 0.5 1. 2.]
-    )
-
-
-
-    sim = []
-
-    for (i,C_W) in enumerate(eachrow(C_Wmat))
-        p.glb.C_W = C_W
-        sim_i = simulator(p)
-        typeof(C_W) <: Number ? sim_i = add_idcol(sim_i, :C_W, C_W) : nothing
-        sim_i = add_idcol(sim_i, :treatment_id, i)
-        push!(sim, sim_i)
-    end
-
-    p.glb.C_W = C_W_int
-
-    sim = combine_outputs(Vector{typeof(sim[1])}(sim); idcol = :treatment_id)

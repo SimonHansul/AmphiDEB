@@ -65,18 +65,20 @@ end
     global p = deepcopy(defaultparams)
 
     p.glb.t_max = 365*3
-    p.glb.dX_in = 500.
+    p.glb.dX_in = 200.
     p.glb.k_V = 0.
     p.glb.N0 = 10
 
     p.spc.Z = truncated(Normal(1, 0.1), 0, Inf)
-    p.spc.tau_R = 2
-    p.spc.h_S = exp(-0.5)
+    p.spc.tau_R = 365
     p.spc.H_p = 50.
+
+    p.spc.h_S = -log(0.9)
+    p.spc.S_rel_crit = 0.33
 
     @time global sim = AmphiDEB.IBM_simulator(
         p; 
-        showinfo = 60,  # update every 30 days
+        showinfo = 60, # print update every so many days 
         saveat = 7, # saving weekly output
         dt = 1 # daily timestep - better to turn down to hourly for proper results
         )
