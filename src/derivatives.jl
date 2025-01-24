@@ -263,6 +263,25 @@ function AmphiDEB_ODE!(du, u, p, t)::Nothing
     return nothing
 end
 
+@inline function temperature_sinusoidal(t::Float64, T_max::Float64, T_min::Float64, t_peak ::Float64)::Float64
+
+    amplitude = (T_max - T_min) / 2
+    offset = (T_max + T_min) / 2
+    omega = 2π / 365
+    phase_shift = (π / 2) - omega * t_peak
+    return amplitude * sin(omega * t + phase_shift) + offset
+
+end
+
+function AmphiDEB_global!(du, u, p, t)::Nothing
+
+    EcotoxSystems.DEBODE_global!(du, u, p, t)
+    u.glb.T = p.glb.tempfun(t, p.glb.temp...) 
+
+    return nothing
+end
+
+
 function AmphiDEB_individual!(du, u, p, t)::Nothing
 
     TKTD_mix_IA!(du, u, p, t) # TKTD following default model
