@@ -8,7 +8,15 @@ glb = ComponentVector(
     dX_in = 20, # food input rate [mg d^-1] - assuming *ad libitum* feeding per default
     k_V = 0., # dilution rate in the aquatic medium [V] - does not matter for ad libitum conditions
     V_patch = 1., # simulated volume [d^-1] - does not matter for ad libitum conditions
-    T = 293.15, # ambient temperature [K]
+    T = 293.15, # ambient temperature
+    #tempfun = temperature_sinusoidal, # function describing Temperature as a function of time
+    ## parameters controlling temperature regime - elements have to match tempfun
+    ## defaults are realistic for monthly averages in central spain (Toledo)
+    #temp = ComponentVector( 
+    #    T_min = 273.15 + 3, # minimum yearly temperature (K); 
+    #    T_max = 273.15 + 22,
+    #    t_T_peak = 182., # day of the year at which temeprature peak occurs
+    #),
     C_W = [0.;], # exposure concentrations - currently only constant; given as a matrix. each row is a treatment, each column is a compound
     pathogen_inoculation_dose = 0., # amount of pathogen spores added to aquatic medium [# spores]
     pathogen_inoculation_time = 30., # time-point of pathogen inoculation [t]
@@ -108,7 +116,8 @@ spc = ComponentVector(
     H_p = 55., # maturity at puberty
 
     T_A = 8000., # Arrhenius temperature (K) 
-    T_ref = 293.15, # reference temperature
+    T_ref = 293.15, # reference 
+    b_T = 40., # effect strength of temperature on resource allocation
 
     #=
     TKTD parameters    

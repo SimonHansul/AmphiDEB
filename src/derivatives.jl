@@ -111,10 +111,29 @@ function determine_life_stage!(du, u, p, t)::Nothing
     return nothing
 end
 
+
+"""
+    life_stage_effects(du, u, p, t)::Tuple{Float64,Float64}
+
+Handles life-stage specificity of parameters. 
+The parameter notation foresees that the superscript indicates the first life stage for which a value is valid,
+e.g. if we have eta_AS_emb and eta_AS_juv, then eta_AS_emb is applied for eymbros, larvae and metamorphs, and eta_AS_juv is applied for juveniles and adults
+"""
+function life_stage_effects(du, u, p, t)::Tuple{Float64,Float64}
+
+    eta_AS = (u.ind.embryo + u.ind.larva + u.ind.metamorph) * p.ind.eta_AS_emb + (u.ind.juvenile + u.ind.adult) * p.ind.eta_AS_juv
+    kappa = (u.ind.embryo + u.ind.larva + u.ind.metamorph) * p.ind.kappa_emb + (u.ind.juvenile + u.ind.adult) * p.ind.kappa_juv
+
+    # adjust kappa for temperature
+    kappa = 1/(1 + (((1-kappa)/kappa) * exp(-p.ind.b_T * ((p.ind.T_ref - p.glb.T)/p.ind.T_ref))))
+
+    return eta_AS,kappa
+end
+
 # temperature correction
 function y_T!(du, u, p, t)::Nothing
     
-    u.ind.y_T = exp((p.ind.T_A / p.ind.T_ref) - (p.ind.T_A / p.glb.T)) 
+    u.ind.y_T = exp((p.ind.T_A / p.ind.T_ref) - (p.ind.T_A / p.glb.T))
 
     return nothing
 end
@@ -176,15 +195,8 @@ end
 Calculation of growth fluxes for amphibians. <br>
 Returns life stage-specific values for `eta_AS` and `kappa`.
 """
-function growth!(du, u, p, t)::Tuple{Real,Real}
+function growth!(du, u, p, t, eta_AS, kappa)::Nothing
     
-    #### handle life-stage specificity of parameters ####
-    # the parameter notation foresees that the superscript indicates the first life stage for which a value is valid
-    # e.g. if we have eta_AS_emb and eta_AS_juv, then eta_AS_emb is applied for eymbros, larvae and metamorphs, and eta_AS_juv is applied for juveniles and adults
-
-    eta_AS = (u.embryo + u.larva + u.metamorph) * p.eta_AS_emb + (u.juvenile + u.adult) * p.eta_AS_juv
-    kappa = (u.embryo + u.larva + u.metamorph) * p.kappa_emb + (u.juvenile + u.adult) * p.kappa_juv
-
     #### somatic growth for embryos, juveniles and adults ####
     # apply shrinking equation if maintenance costs are not covered 
     # we use a sigmoid switch to avoid yet another if/else statement
@@ -214,7 +226,7 @@ function growth!(du, u, p, t)::Tuple{Real,Real}
 
     du.S = (u.embryo + u.juvenile + u.adult) * dS_emb_juv_ad + u.larva * dS_lrv + u.metamorph * dS_mt
 
-    return eta_AS, kappa
+    return nothing
 end 
 
 """
@@ -263,6 +275,25 @@ function AmphiDEB_ODE!(du, u, p, t)::Nothing
     return nothing
 end
 
+@inline function temperature_sinusoidal(t::Float64, T_max::Float64, T_min::Float64, t_peak ::Float64)::Float64
+
+    amplitude = (T_max - T_min) / 2
+    offset = (T_max + T_min) / 2
+    omega = 2π / 365
+    phase_shift = (π / 2) - omega * t_peak
+    return amplitude * sin(omega * t + phase_shift) + offset
+
+end
+
+function AmphiDEB_global!(du, u, p, t)::Nothing
+
+    EcotoxSystems.DEBODE_global!(du, u, p, t)
+    #u.glb.T = p.glb.tempfun(t, p.glb.temp...) 
+
+    return nothing
+end
+
+
 function AmphiDEB_individual!(du, u, p, t)::Nothing
 
     TKTD_mix_IA!(du, u, p, t) # TKTD following default model
@@ -283,10 +314,11 @@ function Amphibian_DEB!(du, u, p, t)::Nothing
 
     determine_life_stage!(du.ind, u.ind, p.ind, t)
     y_T!(du, u, p, t)
+    eta_AS, kappa = life_stage_effects(du, u, p, t)
 
     ingestion!(du, u, p, t)
     maintenance!(du.ind, u.ind, p.ind, t)
-    eta_AS, kappa = growth!(du.ind, u.ind, p.ind, t)
+    growth!(du.ind, u.ind, p.ind, t, eta_AS, kappa)
     maturation!(du.ind, u.ind, p.ind, t, kappa)
     metamorphic_reserve!(du.ind, u.ind, p.ind, t, eta_AS, kappa)
 
