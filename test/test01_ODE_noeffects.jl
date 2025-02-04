@@ -115,7 +115,7 @@ end
     @test 0.99 < maximum(sim.metamorph) < 1.01
     @test 0.99 < maximum(sim.juvenile) < 1.01
     @test 0.99 < maximum(sim.adult) < 1.01
-
+    
     # check that the sum of life stage indicators is always approximately 1
 
     sum_indicators = @. sim.embryo + sim.larva + sim.metamorph + sim.juvenile + sim.adult

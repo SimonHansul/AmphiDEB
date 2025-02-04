@@ -10,6 +10,11 @@ function default_individual_rules!(
 
     ind.age += m.dt
 
+    # death due to aging
+    if ind.age > p.ind.a_max
+        ind.cause_of_death = 1.
+    end
+
     # life-stage transitions are part of ODE in amphibian model and omitted here
     
     # for starvation mortality, currently only a limit is set on the amount of mass that can be lost
