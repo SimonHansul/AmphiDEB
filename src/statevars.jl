@@ -38,7 +38,6 @@ function initialize_individual_statevars(
         R = 0., # reproduction buffer
         f_X = 1., # scaled functional response 
         I_emb = 0., # ingestion from vitellus
-        I_p = 0., # ingestion from external food resource
         I = 0., # total ingestion
         A = 0., # assimilation
         M = 0., # somatic maintenance
@@ -50,8 +49,7 @@ function initialize_individual_statevars(
         y_T = 1.,
 
         y_z = EcotoxSystems.constrmmat(p.ind.k_D_z), # relative response per stressor and pmoa
-        #y_j = constrmmat(p.ind.k_D_z, 2, fillval = 1), # relative response per pmoa
-        y_j = [0. 0. 0. 0. 0.],
+        y_j = [1. 1. 1. 1. 1.],
         h_z = 0., # hazard rate caused by chemical stressors
         S_z = 1., # chemical-related survival probability
 

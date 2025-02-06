@@ -27,22 +27,26 @@ AmphiDEB.calc_S_max_juv(defaultparams.spc)
 @testset "Toxicity with default DEB parameters" begin 
     global p = deepcopy(defaultparams)
 
-    p.glb.t_max = 60
+    pmoa_idx = 3
+
+    p.glb.t_max = 365.
     #p.glb.pathogen_inoculation_time = Inf
 
     p.glb.dX_in = 15.
 
-    p.spc.k_D_z[3] = 1.
-    p.spc.e_z[3] = 1. 
-    p.spc.b_z[3] = .1
+    p.spc.H_p = 40.
 
-    sim = exposure(p -> ODE_simulator(
+    p.spc.k_D_z[pmoa_idx] = 1.
+    p.spc.e_z[pmoa_idx] = 1. 
+    p.spc.b_z[pmoa_idx] = .1
+
+    global sim = exposure(p -> ODE_simulator(
             p, 
             returntype = EcotoxSystems.dataframe, 
             alg = Tsit5()
             ), 
             p,
-            Matrix(hcat([0.; 0.5; 1.5; 2; 4.]...)')
+            Matrix(hcat([0.; 0.5; 1.; 1.5; 2.; 4.;]...)')
             )
         
     sim[!,:E_mt_rel] = sim.E_mt ./ (sim.S + sim.E_mt)
@@ -51,8 +55,12 @@ AmphiDEB.calc_S_max_juv(defaultparams.spc)
     plt = @df sim plot(
         plot(:t, :S, group = :C_W_1),
         plot(:t, :E_mt, group = :C_W_1),
+        plot(:t, :y_j_1_3, group = :C_W_1),
+        plot(:t, :R, group = :C_W_1),
+        plot(:t, :H, group = :C_W_1),
         xrotation = 45, 
-        xlabel = "t", ylabel = ["S" "E_mt"], leg = [:topleft false], legendtitle = "C_W"
+        xlabel = "t", ylabel = ["S" "E_mt" "y_A" "R" "H"], 
+        leg = [:topleft false false], legendtitle = "C_W"
         )
     display(plt)
 

@@ -69,7 +69,7 @@ end
 @testset "Simulation with density-dependence" begin
     global p = deepcopy(defaultparams)
 
-    p.glb.t_max = 365. * 3
+    p.glb.t_max = 10. #365. * 3
     p.glb.dX_in = 500.
     p.glb.k_V = 0.1
     p.glb.N0 = 10
@@ -86,7 +86,7 @@ end
     @time global sim = AmphiDEB.IBM_simulator(
         p; 
         showinfo = 60, # print update every so many days 
-        saveat = 7, # saving weekly output
+        saveat = 1, # saving weekly output
         dt = 1/24 # daily timestep - better to turn down to hourly for proper results
         )
     
@@ -101,7 +101,7 @@ end
 
     p_spc = @df sim.spc plot(
         groupedlineplot(:t, :S, :cohort, ylabel = "S", title = "Structural mass"), 
-        groupedlineplot(:t, :cum_repro, :cohort, ylabel = "cR", title = "Cumulative reproduction"),
+        groupedlineplot(:t, :X_emb, :cohort, ylabel = "cR", title = "Cumulative reproduction"),
         groupedlineplot(:t, :f_X, :cohort, ylabel = "f(X)", title = "Scaled funct. response"), 
         groupedlineplot(:t, :H, :cohort, ylabel = "H", title = "Maturity"),
         rotation = 45, xlabel = "Time [d]", titlefontsize = 10, 
