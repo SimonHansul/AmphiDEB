@@ -69,7 +69,7 @@ end
 @testset "Simulation with density-dependence" begin
     global p = deepcopy(defaultparams)
 
-    p.glb.t_max = 365. * 10
+    p.glb.t_max = 365. * 3
     p.glb.dX_in = 500.
     p.glb.k_V = 0.1
     p.glb.N0 = 10

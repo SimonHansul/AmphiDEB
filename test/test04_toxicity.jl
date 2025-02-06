@@ -24,7 +24,7 @@ import EcotoxSystems: constrmvec
 defaultparams.spc.dI_max_juv = 1
 AmphiDEB.calc_S_max_juv(defaultparams.spc)
 
-@testset "Default parameters" begin 
+@testset "Toxicity with default DEB parameters" begin 
     global p = deepcopy(defaultparams)
 
     p.glb.t_max = 60
