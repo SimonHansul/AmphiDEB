@@ -34,8 +34,7 @@ import EcotoxSystems: constrmvec
 
     @time global sim = AmphiDEB.ODE_simulator(
             p, 
-            saveat = 1,
-            alg = Tsit5()
+            saveat = 1/24, # we need high-resolution output to verify the solution
             );
 
     sim[!,:E_mt_rel] = sim.E_mt ./ (sim.S + sim.E_mt)
@@ -53,9 +52,11 @@ import EcotoxSystems: constrmvec
     display(plt)
 
     # check final structural mass
+
     @test 0.8*S_max_anl <= maximum(sim.S) <= 1.2*S_max_anl 
 
     # check that all life stage indicators max out close to 1
+    
     @test 0.99 < maximum(sim.embryo) < 1.01
     @test 0.99 < maximum(sim.larva) < 1.01
     @test 0.99 < maximum(sim.metamorph) < 1.01
@@ -67,9 +68,33 @@ import EcotoxSystems: constrmvec
     sum_indicators = @. sim.embryo + sim.larva + sim.metamorph + sim.juvenile + sim.adult
 
     @test unique(isapprox.(1, sum_indicators, atol = 1e-3)) == [true]
+    
+
+    # verify that the size-specific maintenance rate is approximately constant by back-calculating k_M from the state variables
+        
+    sim[!,:dM] = vcat(0, diff(sim.M)) ./ vcat(0, diff(sim.t))
+    k_M = sim.dM ./ sim.S 
+
+    reldiff_kM = begin
+        kmin, kmax = extrema(k_M[50:end]) # we allow for a small "burn in" period: at the beginning, k_M is close to 0 and the relative error will be large 
+        kmax / kmin
+    end
+
+    @test 0.9 < reldiff_kM < 1.1
+
+    # same for k_J
+
+    sim[!,:dH] = vcat(0, diff(sim.J)) ./ vcat(0, diff(sim.t))
+    k_J = sim.dH ./ sim.H 
+
+    reldiff_kJ = begin
+        kmin, kmax = extrema(k_J[50:end]) 
+        kmax / kmin
+    end
+
+    @test 0.9 < reldiff_kJ < 1.1
+
 end
-
-
 
 @testset "Randomized parameters" begin
     global p = deepcopy(defaultparams)
