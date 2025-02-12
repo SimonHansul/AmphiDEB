@@ -216,18 +216,34 @@ function growth!(du, u, p, t, eta_AS, kappa)::Nothing
         kappa * du.A, 
         du.M, 
         -(du.M / p.eta_SA - (1 - p.gamma) * kappa * du.A), 
-        eta_AS * u.y_j[1] * ((1 - p.gamma) * kappa * du.A - du.M)
+        eta_AS * u.y_j[1] * (1 - p.gamma) * ( kappa * du.A - du.M)
     )
 
     #### somatic growth for metamorphs ####
     # for metamorph, structural growth is assumed to be driven by the residual assimilation flux
 
-    dS_mt = u.metamorph * eta_AS * u.y_j[1] * u.y_jP[1] * du.A  
-
+    dS_mt = u.metamorph * eta_AS * u.y_j[1] * u.y_jP[1] * du.A
     du.S = (u.embryo + u.juvenile + u.adult) * dS_emb_juv_ad + u.larva * dS_lrv + u.metamorph * dS_mt
 
     return nothing
 end 
+
+"""
+    metamorphic_reserve!(du, u, p, t, kappa)::Nothing
+
+Calculation of metamorphic reserve dynamics for amphibians. <br>
+Metamorphic reserve is accumulated during larval development and depleted during metamorphic climax. 
+"""
+function metamorphic_reserve!(du, u, p, t, eta_AS, kappa)::Nothing
+    
+    # the metamorphic reserve is fueled by the gamma*kappa-fraction of the assimilation flux
+    dE_mt_lrv = p.gamma * (kappa * du.A - du.M) # before metamorphosis, reserve is built up
+    dE_mt_mt = -(du.H + du.J + du.M) # during metamorphosis, while there is still E_mt left, it will be used to fuel maintenance and maturation
+    du.E_mt = u.larva * dE_mt_lrv + u.metamorph * dE_mt_mt
+    du.E_mt_max = u.larva * du.E_mt
+
+    return nothing
+end
 
 """
     maturation!(du, u, p, t, kappa)::Nothing
@@ -249,22 +265,7 @@ function maturation!(du, u, p, t, kappa)::Nothing
     return nothing
 end
 
-"""
-    metamorphic_reserve!(du, u, p, t, kappa)::Nothing
 
-Calculation of metamorphic reserve dynamics for amphibians. <br>
-Metamorphic reserve is accumulated during larval development and depleted during metamorphic climax. 
-"""
-function metamorphic_reserve!(du, u, p, t, eta_AS, kappa)::Nothing
-    
-    # the metamorphic reserve is fueled by the gamma*kappa-fraction of the assimilation flux
-    dE_mt_lrv = p.gamma * kappa * du.A - du.M # before metamorphosis, reserve is built up
-    dE_mt_mt = -(du.H + du.J + du.M) # during metamorphosis, while there is still E_mt left, it will be used to fuel maintenance and maturation
-    du.E_mt = u.larva * dE_mt_lrv + u.metamorph * dE_mt_mt
-    du.E_mt_max = u.larva * du.E_mt
-
-    return nothing
-end
 
 function AmphiDEB_ODE!(du, u, p, t)::Nothing
 

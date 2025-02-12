@@ -23,6 +23,7 @@ import EcotoxSystems: constrmvec
 
 
 @testset "Default parameters" begin
+
     global p = deepcopy(defaultparams)
 
     p.glb.t_max = 365*2
@@ -70,7 +71,6 @@ import EcotoxSystems: constrmvec
 
     @test unique(isapprox.(1, sum_indicators, atol = 1e-3)) == [true]
     
-
     # verify that the size-specific maintenance rate is approximately constant by back-calculating k_M from the state variables
         
     sim[!,:dM] = vcat(0, diff(sim.M)) ./ vcat(0, diff(sim.t))
@@ -111,11 +111,39 @@ import EcotoxSystems: constrmvec
     Simulated maximum maturity: $(round(maximum(sim.H)))
     "
 
-
     @test 0.8*H_max_anl_juv <= maximum(sim.H) <= 1.2*H_max_anl_juv 
 end
 
+
+begin # effect of gamma parameter
+
+    plt = plot(layout = (1,2), leg = true, size = (800,500), xlabel = "t", ylabel = ["W" "[E_mt]_W"])
+
+    
+    p.glb.t_max = 60
+    p.glb.pathogen_inoculation_time = Inf
+    p.glb.dX_in = 20.
+    p.spc.H_p = 55.
+
+
+    for gamma in [0.25, 0.5, 0.75]
+        
+        p.spc.gamma = gamma
+        sim = AmphiDEB.ODE_simulator(
+            p
+            );
+
+        @df sim plot!(plt, :t, :S .+ :E_mt, label = gamma, subplot = 1)
+        @df sim plot!(plt, :t, :E_mt ./ (:S .+ :E_mt), label = gamma, subplot = 2)
+
+    end
+
+    display(plt)
+
+end
+
 @testset "Randomized parameters" begin
+    
     global p = deepcopy(defaultparams)
 
     p.glb.t_max = 365*2
@@ -153,6 +181,7 @@ end
     display(plt)
     
     # check that all life stage indicators max out close to 1
+
     @test 0.99 < maximum(sim.embryo) < 1.01
     @test 0.99 < maximum(sim.larva) < 1.01
     @test 0.99 < maximum(sim.metamorph) < 1.01
@@ -242,3 +271,7 @@ end
     @test 0.9 < reldiff_kJ < 1.1
 
 end
+#
+
+
+

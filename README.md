@@ -28,3 +28,8 @@
 
 - Fixed a typo in calculation of metamorphic reserve
 - Added definition of alternative model version M2, which views metamorphic reserve as sub-compartment of structure (=>`E_mt` is subject to maintenance costs and contributes to surface area scaling)
+
+
+### v0.1.8 
+
+- Testing a slightly changed formulation for the default model (1-$\gamma$ pulled out of the parenthesis so that $\gamma$ does not effect Equilbirium $E_{mt}$)
