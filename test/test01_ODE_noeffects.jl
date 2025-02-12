@@ -28,9 +28,10 @@ import EcotoxSystems: constrmvec
     p.glb.t_max = 365*2
     p.glb.pathogen_inoculation_time = Inf
     p.glb.dX_in = 20.
-    p.spc.H_p = 50.
+    p.spc.H_p = 55.
 
     S_max_anl = AmphiDEB.calc_S_max_juv(p.spc)
+    H_max_anl_juv = AmphiDEB.calc_H_eq_juv(p.spc)
 
     @time global sim = AmphiDEB.ODE_simulator(
             p, 
@@ -94,6 +95,24 @@ import EcotoxSystems: constrmvec
 
     @test 0.9 < reldiff_kJ < 1.1
 
+    # comparing analytically calculated with simulated equilibrium maturity 
+    # for this we need to disengage H_p and re-run the simulation
+
+    p.glb.t_max = 365*10
+    p.spc.H_p = Inf
+    
+    @time global sim = AmphiDEB.ODE_simulator(
+            p, 
+            saveat = 1/24, # we need high-resolution output to verify the solution
+            );
+
+    @info "
+    Analytically caluclated equilibrium maturity: $(round(H_max_anl_juv, sigdigits = 3))
+    Simulated maximum maturity: $(round(maximum(sim.H)))
+    "
+
+
+    @test 0.8*H_max_anl_juv <= maximum(sim.H) <= 1.2*H_max_anl_juv 
 end
 
 @testset "Randomized parameters" begin
@@ -107,7 +126,6 @@ end
     p.spc.Z = truncated(Normal(1, 0.1), 0, Inf)
     p.spc.k_M_emb = truncated(Normal(0.11, 0.011), 0, Inf)
     p.spc.eta_AR = truncated(Normal(0.95, 0.095), 0, 1)
-
     p.spc.H_p = 50.
 
     S_max_anl = AmphiDEB.calc_S_max_juv(p.spc)
@@ -147,7 +165,6 @@ end
 
     @test unique(isapprox.(1, sum_indicators, atol = 1e-3)) == [true]
 end
-
 
 
 @testset "Model variant M2" begin

@@ -60,7 +60,8 @@ AmphiDEB.calc_S_max_juv(defaultparams.spc)
         plot(:t, :H, group = :C_W_1),
         xrotation = 45, 
         xlabel = "t", ylabel = ["S" "E_mt" "y_A" "R" "H"], 
-        leg = [:topleft false false], legendtitle = "C_W"
+        leg = [:topleft false false false false], legendtitle = "C_W", 
+        size = (1000,600), bottommargin = 5mm, leftmargin = 5mm
         )
     display(plt)
 
