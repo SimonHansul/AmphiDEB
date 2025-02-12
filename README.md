@@ -18,3 +18,13 @@
 - Adjusted slopes for life stage transitions
 - Some optimizations in TKTD submodel (can be improved further)
 - Worked towards proper IBM tests
+
+
+### v0.1.5-0.1.6
+
+- Various small bugfixes and improved tests
+
+### v0.1.7
+
+- Fixed a typo in calculation of metamorphic reserve
+- Added definition of alternative model version M2, which views metamorphic reserve as sub-compartment of structure (=>`E_mt` is subject to maintenance costs and contributes to surface area scaling)
