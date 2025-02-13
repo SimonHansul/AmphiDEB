@@ -53,7 +53,7 @@ import EcotoxSystems: constrmvec
     display(plt)
 
     # check final structural mass
-    
+
     @test isapprox(S_max_anl, maximum(sim.S), rtol = 1e-2) 
 
     # check that all life stage indicators max out close to 1
@@ -94,6 +94,29 @@ import EcotoxSystems: constrmvec
 
     @test 0.9 < reldiff_kJ < 1.1
 
+end
+
+begin
+    p.spc.Z = Dirac(1.)
+    p.spc.dI_max_lrv = 1.462
+    p.spc.k_M_emb = 0.220
+    p.spc.eta_AS_emb = 0.485
+    p.spc.H_j1 = 7.87
+    p.spc.gamma = 0.078
+    
+    #p.spc.watercontent_larvae = 0.938
+    #p.spc.watercontent_juveniles = 0.904
+    
+    sim = AmphiDEB.ODE_simulator(p)
+
+    S_max_exp = AmphiDEB.calc_S_max_juv(p.spc)
+
+    plt = @df sim plot(:t, :S)
+    hline!([S_max_exp])
+    display(plt)
+    
+    # simulated maximum is only 95% of expected
+    maximum(sim.S) / S_max_exp
 end
 
 @testset "Randomized parameters" begin

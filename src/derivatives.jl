@@ -182,6 +182,11 @@ function maintenance!(du, u, p, t)::Nothing
     return nothing
 end
 
+"""
+    reproduction!(du, u, p, t, kappa)::Nothing
+
+Calculation of reproduction fluxes.
+"""
 function reproduction!(du, u, p, t, kappa)::Nothing
     
     du.R = u.adult * clipneg(p.eta_AR * u.y_j[4] * u.y_jP[4] * ((1 - kappa) * du.A - du.J))  # reproduction flux
