@@ -66,6 +66,12 @@ function AmphODE_callbacks()
 
 end
 
+@inline function LL2(x::Real, p::NTuple{2,Real})
+    return (1 / (1 + Complex(x / p[1]) ^ p[2])).re
+end
+
+LL2(x, p1, p2) = LL2(x, (p1, p2))
+
 # mixture TKTD based on independent action model
 @inline function TKTD_mix_IA!(du, u, p, t)::Nothing
 
@@ -83,7 +89,7 @@ end
         du.ind.D_h[z] = (1 - ind.embryo) * p.ind.k_D_h[z] * (glb.C_W[z] - ind.D_h[z])
     end
 
-    @. ind.y_z = EcotoxSystems.softNEC2neg(ind.D_z, p.ind.e_z, p.ind.b_z) # relative responses per stressor and PMoA
+    @. ind.y_z = LL2(ind.D_z, p.ind.e_z, p.ind.b_z) # relative responses per stressor and PMoA
     
     ind.y_j .= reduce(*, ind.y_z; dims=1) # relative responses per PMoA are obtained as the product over all chemical stressors
     ind.y_j[2] /= ind.y_j[2]^2 # for pmoas with increasing responses (M), the relative response has to be inverted  (x/x^2 == 1/x) 
@@ -266,16 +272,6 @@ function maturation!(du, u, p, t, kappa)::Nothing
 end
 
 
-
-function AmphiDEB_ODE!(du, u, p, t)::Nothing
-
-    EcotoxSystems.DEBODE_global!(du, u, p, t)
-    Pathogen_growth!(du, u, p, t)
-    AmphiDEB_individual!(du, u, p, t)
-
-    return nothing
-end
-
 @inline function temperature_sinusoidal(t::Float64, T_max::Float64, T_min::Float64, t_peak ::Float64)::Float64
 
     amplitude = (T_max - T_min) / 2
@@ -324,6 +320,16 @@ function Amphibian_DEB!(du, u, p, t)::Nothing
     metamorphic_reserve!(du.ind, u.ind, p.ind, t, eta_AS, kappa)
 
     reproduction!(du.ind, u.ind, p.ind, t, kappa)
+
+    return nothing
+end
+
+
+function AmphiDEB_ODE!(du, u, p, t)::Nothing
+
+    EcotoxSystems.DEBODE_global!(du, u, p, t)
+    Pathogen_growth!(du, u, p, t)
+    AmphiDEB_individual!(du, u, p, t)
 
     return nothing
 end
