@@ -132,8 +132,9 @@ function life_stage_effects(du, u, p, t)::Tuple{Float64,Float64}
 
     # adjust kappa for temperature
     kappa = 1/(1 + (((1-kappa)/kappa) * exp(-p.ind.b_T * ((p.ind.T_ref - p.glb.T)/p.ind.T_ref))))
+    kappa *= u.ind.y_j[6]
 
-    return eta_AS,kappa
+    return eta_AS, kappa
 end
 
 # temperature correction

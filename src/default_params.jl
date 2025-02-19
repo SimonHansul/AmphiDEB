@@ -123,9 +123,9 @@ spc = ComponentVector(
     TKTD parameters    
     =#
 
-    k_D_z = [0. 0. 0. 0. 0.;], # k_D - value per PMoA (G,M,A,R,H) and stressor (1 row = 1 stressor)
-    b_z = [0. 0. 0. 0. 0.;], # slope parameters
-    e_z = [0. 0. 0. 0. 0.;], # sensitivity parameters (thresholds)
+    k_D_z = [0. 0. 0. 0. 0. 0.;], # k_D - value per PMoA (G,M,A,R,H,kap) and stressor (1 row = 1 stressor)
+    b_z =   [2. 2. 2. 2. 2. 2.;], # slope parameters
+    e_z =   [1e10 1e10 1e10 1e10 1e10 1e10;], # sensitivity parameters (thresholds)
     k_D_h = [0.;], # k_D - value for GUTS-Sd module (1 row = 1 stressor)
     e_h = [0.;], # sensitivity parameter (threshold) for GUTS-SD module
     b_h = [0.;], # slope parameter for GUTS-SD module 
@@ -144,8 +144,8 @@ spc = ComponentVector(
     =#
 
     Chi = LogNormal(log(1)+1^2, 1), # killing rate modifier, log-normal distribution with mode 1 and sigma 1, (mu = ln(mode)+sigma^2).
-    e_P = [Inf, Inf, Inf, Inf], # sensitivity parameter (threshold) for GUTS-SD module
-    b_P = [2., 2., 2., 2.], # slope parameter for GUTS-SD module 
+    e_P = [Inf, Inf, Inf, Inf, Inf], # sensitivity parameter (threshold) for GUTS-SD module
+    b_P = [2., 2., 2., 2, 2.], # slope parameter for GUTS-SD module 
 )
 
 # defaults for pathogen model are averages from the value ranges reported by Drawert et al. (2018)

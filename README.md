@@ -32,4 +32,9 @@
 
 ### v0.1.8 
 
-- Testing a slightly changed formulation for the default model (1-$\gamma$ pulled out of the parenthesis so that $\gamma$ does not effect Equilbirium $E_{mt}$)
+- Testing a slightly changed formulation for the default model (1-$\gamma$ pulled out of the parenthesis so that $\gamma$ does not effect Equilbirium $S$)
+
+### v0.1.9
+
+- Implemented PMoA 6: Decrease in kappa
+- Adjusted default params to be compatible with log-logistic responses
