@@ -31,12 +31,12 @@ end
 
 function IBM_simulator(
     p::ComponentVector;
-    individual_ode! = AmphiDEB_ODE!, 
+    individual_ode! = AmphiDEB_individual!, 
     individual_rules! = default_individual_rules!,
     init_global_statevars = initialize_global_statevars,
     init_individual_statevars = initialize_individual_statevars,
     global_rules! = EcotoxSystems.default_global_rules!,
-    global_ode! = EcotoxSystems.DEBODE_global!,
+    global_ode! = DEBODE_global_ecotox!,
     kwargs...
     )
 

@@ -29,7 +29,7 @@ function default_individual_rules!(
         let num_offspring = trunc(ind.R / p.ind.X_emb_int)
             for _ in 1:num_offspring
                 m.idcount += 1 # increment individual counter
-                push!(m.individuals, EcotoxSystems.Individual( # create new individual and push to individuals vector
+                push!(m.individuals, EcotoxSystems.DEBIndividual( # create new individual and push to individuals vector
                     m.p,
                     m.u.glb;
                     id = m.idcount,

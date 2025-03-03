@@ -89,14 +89,14 @@ function ingestion!(du, u, p, t)::Nothing
     @. u.ind.f_X = (u.glb.X / p.glb.V_patch) / ((u.glb.X / p.glb.V_patch) + K_X)
 
     dI_emb = u.ind.embryo * (Complex(u.ind.S)^(2/3)).re * p.ind.dI_max_emb * u.ind.y_T
-    dI_mt = u.ind.metamorph * u.ind.f_X * p.ind.dI_max_lrv * (u.ind.E_mt / u.ind.E_mt_max) * (Complex(u.ind.S)^(2/3)).re * u.ind.y_T
-    dI_lrv = u.ind.larva * u.ind.f_X * p.ind.dI_max_lrv * (Complex(u.ind.S)^(2/3)).re * u.ind.y_T
-    dI_juv_ad = (u.ind.juvenile + u.ind.adult) * u.ind.f_X * p.ind.dI_max_juv * (Complex(u.ind.S)^(2/3)).re * u.ind.y_T
+    dI_mt = u.ind.metamorph * u.ind.f_X[1] * p.ind.dI_max_lrv * (u.ind.E_mt / u.ind.E_mt_max) * (Complex(u.ind.S)^(2/3)).re * u.ind.y_T
+    dI_lrv = u.ind.larva * u.ind.f_X[1] * p.ind.dI_max_lrv * (Complex(u.ind.S)^(2/3)).re * u.ind.y_T
+    dI_juv_ad = (u.ind.juvenile + u.ind.adult) * u.ind.f_X[2] * p.ind.dI_max_juv * (Complex(u.ind.S)^(2/3)).re * u.ind.y_T
     
     du.ind.I = dI_emb + dI_mt + dI_lrv + dI_juv_ad
     du.ind.X_emb = -dI_emb
     
-    du.glb.X -= du.ind.I
+    @. du.glb.X -= [du.ind.I * (u.ind.larva + u.ind.metamorph), du.ind.I * (u.ind.juvenile+u.ind.adult)]
 
     # assimilation flux
     du.ind.A = du.ind.I * p.ind.eta_IA * u.ind.y_j[3] * u.ind.y_jP[3]
@@ -212,10 +212,17 @@ function metamorphic_reserve!(du, u, p, t, eta_AS, kappa)::Nothing
     return nothing
 end
 
+function DEBODE_global_ecotox!(du, u, p, t)::Nothing
+
+    @. du.glb.X = p.glb.dX_in - p.glb.k_V * u.glb.X  
+
+    return nothing
+end
+
 function AmphiDEB_ODE!(du, u, p, t)::Nothing
 
-    EcotoxSystems.DEBODE_global!(du, u, p, t)
-    Pathogen_growth!(du, u, p, t)
+    DEBODE_global_ecotox!(du, u, p, t)
+    #Pathogen_growth!(du, u, p, t)
     AmphiDEB_individual!(du, u, p, t)
 
     return nothing
@@ -223,8 +230,8 @@ end
 
 function AmphiDEB_individual!(du, u, p, t)::Nothing
 
-    EcotoxSystems.TKTD_mix_IA!(du, u, p, t) # TKTD following default model
-    Pathogen_Infection!(du, u, p, t) 
+    #EcotoxSystems.TKTD_mix_IA!(du, u, p, t) # TKTD following default model
+    #Pathogen_Infection!(du, u, p, t) 
     Amphibian_DEB!(du, u, p, t)
 
     return nothing

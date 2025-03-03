@@ -50,3 +50,21 @@ norm(x) = x ./ sum(x)
 # TODO: later (optional)
 #   - add seasonal temperature change (e.g. sine curve)
 #   - difference between water and air temperature?
+
+
+#warum ist v_patch = [0.0,0.0]? ist weg?
+#ecotox.ibmschedule model_step X = max(0,X) element wise machen 
+
+#schlechtere maintenance und assimilation verhindern erreichen des maturity threshold
+
+#todo 6.2.:
+#dose repsonse plots nochmal mit niedrigerem maturity threshold machen
+#tests zur 2d nachrung machen
+
+
+##25.02.
+#mit Simon treffen. woher Werte? realistische bereiche? aktuelle ergebnisse
+#pathogen und tktd fixen
+#dosis wirkungskurven für einzelne generationen
+#nahrungsverfügbarkeit deutlich erhöhen
+#hintergrundmortalität
