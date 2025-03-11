@@ -122,10 +122,10 @@ spc = ComponentVector(
     #=
     TKTD parameters    
     =#
-
-    k_D_z = [0. 0. 0. 0. 0.;], # k_D - value per PMoA (G,M,A,R,H) and stressor (1 row = 1 stressor)
-    b_z = [1. 1. 1. 1. 1.;], # slope parameters
-    e_z = [1e10 1e10 1e10 1e10 1e10;], # sensitivity parameters (thresholds or median effective damage)
+    
+    k_D_z = [0. 0. 0. 0. 0. 0.;], # k_D - value per PMoA (G,M,A,R,H,kap) and stressor (1 row = 1 stressor)
+    b_z =   [2. 2. 2. 2. 2. 2.;], # slope parameters
+    e_z =   [1e10 1e10 1e10 1e10 1e10 1e10;], # sensitivity parameters (thresholds)
     k_D_h = [0.;], # k_D - value for GUTS-Sd module (1 row = 1 stressor)
     e_h = [1e10;], # sensitivity parameter (threshold) for GUTS-SD module
     b_h = [1.;], # slope parameter for GUTS-SD module 
