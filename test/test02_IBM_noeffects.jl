@@ -60,7 +60,8 @@ norm(x) = x ./ sum(x)
     plot(p_glb, p_spc, layout = grid(1,2, widths = norm([2/3, 1])), size = (1000,600)) |> display
 
 
-    @test 2e4 < maximum(sim.glb) < 2e5
+    # check expected order of magnitude of population size after 1.5 years of simulation with defaultparams
+    @test 2e4 < maximum(sim.glb) < 2e5 
 end
 
 

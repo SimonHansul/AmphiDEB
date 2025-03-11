@@ -22,6 +22,11 @@ import EcotoxSystems: sig
 import EcotoxSystems: constrmvec
 
 
+plot(
+    plot(x -> EcotoxSystems.softNEC2neg(x, 1., 2.)/(EcotoxSystems.softNEC2neg(x, 1., 2.)^2), xlim = (0,2)),
+    plot(x -> AmphiDEB.LL2(x, 1., 2.)/(AmphiDEB.LL2(x, 1., 2.)^2), xlim = (0,2))
+)
+
 @testset "Default parameters" begin
 
     global p = deepcopy(defaultparams)
@@ -113,7 +118,6 @@ import EcotoxSystems: constrmvec
 
     @test 0.8*H_max_anl_juv <= maximum(sim.H) <= 1.2*H_max_anl_juv 
 end
-
 
 begin # effect of gamma parameter
 

@@ -71,6 +71,7 @@ end
 end
 
 LL2(x, p1, p2) = LL2(x, (p1, p2))
+LL2GUTS(x, p1, p2) = -log(LL2(x, (p1, p2)))
 
 # mixture TKTD based on independent action model
 @inline function TKTD_mix_IA!(du, u, p, t)::Nothing
@@ -78,9 +79,6 @@ LL2(x, p1, p2) = LL2(x, (p1, p2))
     @unpack glb, ind = u
 
     # scaled damage dynamics based on the minimal model
-
-    #@. du.ind.D_z = (1 - ind.embryo) * p.ind.k_D_z * (glb.C_W - ind.D_z)
-    #@. du.ind.D_h = (1 - ind.embryo) * p.ind.k_D_h * (glb.C_W - ind.D_h)
 
     for z in eachindex(glb.C_W)
         # for sublethal effects, we broadcost over all PMoAs
