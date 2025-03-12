@@ -4,6 +4,20 @@
 [![CI](https://github.com/SimonHansul/AmphiDEB.jl/actions/workflows/CI.yml/badge.svg)](https://github.com/SimonHansul/AmphiDEB.jl/actions/workflows/CI.yml)
 [![codecov](https://codecov.io/gh/SimonHansul/AmphiDEB.jl/graph/badge.svg?token=BL1CFR86M6)](https://codecov.io/gh/SimonHansul/AmphiDEB.jl)
 
+## TKTD interface
+
+The TKTD module is designed so that mixtures with an arbitrary number of chemicals can be simulated, 
+and each chemical can act via arbitrary combinations of PMoAs. <br>
+For this pupose, TKTD parameters for sublethal effects are stored in matrices, where the rows represent chemicals and the columns represent PMoAs. <br>
+This affects the parameters $k_{D_j}$, $e_j$ and $b_j$. <br>
+The PMoAs have a fixed order in the parameter matrices:
+
+1. Decrease in growth efficiency ($G$)
+2. Increase in somatic and maturity maintenance costs ($M$)
+3. Decrease in assimilation efficiency ($A$)
+4. Decrease in reproduction efficiency ($R$)
+5. Increase in maturity threshold for metamorphosis ($H$)
+6. Decrease in $\kappa$ ($\kappa$)
 
 ## Changelog 
 
