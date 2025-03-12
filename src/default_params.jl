@@ -123,7 +123,7 @@ spc = ComponentVector(
     TKTD parameters    
     =#
     
-    k_D_z = [0. 0. 0. 0. 0. 0.;], # k_D - value per PMoA (G,M,A,R,H,kap) and stressor (1 row = 1 stressor)
+    k_D_j = [0. 0. 0. 0. 0. 0.;], # k_D - value per PMoA (G,M,A,R,H,kap) and stressor (1 row = 1 stressor)
     b_z =   [2. 2. 2. 2. 2. 2.;], # slope parameters
     e_z =   [1e10 1e10 1e10 1e10 1e10 1e10;], # sensitivity parameters (thresholds)
     k_D_h = [0.;], # k_D - value for GUTS-Sd module (1 row = 1 stressor)

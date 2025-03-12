@@ -24,7 +24,7 @@ import EcotoxSystems: constrmvec
 defaultparams.spc.dI_max_juv = 1
 AmphiDEB.calc_S_max_juv(defaultparams.spc)
 
-defaultparams.spc.k_D_z
+defaultparams.spc.k_D_j
 defaultparams.spc.e_z
 defaultparams.spc.b_z
 
@@ -41,7 +41,7 @@ defaultparams.spc.b_z
     p.spc.H_j1 = 0.2
     p.spc.H_p = 40.
 
-    p.spc.k_D_z[pmoa_idx] = 1.
+    p.spc.k_D_j[pmoa_idx] = 1.
     p.spc.e_z[pmoa_idx] = 2. 
     p.spc.b_z[pmoa_idx] = 2.
 
@@ -92,7 +92,7 @@ end
     p.spc.H_j1 = 0.2
     p.spc.H_p = 40.
 
-    p.spc.k_D_z[pmoa_idx] = 1.
+    p.spc.k_D_j[pmoa_idx] = 1.
     p.spc.e_z[pmoa_idx] = 2. 
     p.spc.b_z[pmoa_idx] = 2.
 

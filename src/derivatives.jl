@@ -80,22 +80,23 @@ LL2GUTS(x, p1, p2) = -log(LL2(x, (p1, p2)))
 
     # scaled damage dynamics based on the minimal model
 
+    isnot_embryo = 1 - ind.embryo
+    
     for z in eachindex(glb.C_W)
         # for sublethal effects, we broadcost over all PMoAs
-        @. du.ind.D_z[z,:] = (1 - ind.embryo) * @view(p.ind.k_D_z[z,:]) * (glb.C_W[z] - @view(ind.D_z[z,:]))
+        @. du.ind.D_j[z,:] = isnot_embryo * @view(p.ind.k_D_j[z,:]) * (glb.C_W[z] - @view(ind.D_j[z,:]))
         # for lethal effects, we have only one value per stressor
-        du.ind.D_h[z] = (1 - ind.embryo) * p.ind.k_D_h[z] * (glb.C_W[z] - ind.D_h[z])
+        du.ind.D_h[z] = isnot_embryo * p.ind.k_D_h[z] * (glb.C_W[z] - ind.D_h[z])
     end
 
-    @. ind.y_z = LL2(ind.D_z, p.ind.e_z, p.ind.b_z) # relative responses per stressor and PMoA
+    @. ind.y_z = LL2(ind.D_j, p.ind.e_z, p.ind.b_z) # relative responses per stressor and PMoA
     
     ind.y_j .= reduce(*, ind.y_z; dims=1) # relative responses per PMoA are obtained as the product over all chemical stressors
     ind.y_j[2] /= ind.y_j[2]^2 # for pmoas with increasing responses (M), the relative response has to be inverted  (x/x^2 == 1/x) 
-
-    #ind.h_z = sum(@. softNEC2GUTS(ind.D_h, p.ind.e_h, p.ind.b_h)) # hazard rate according to GUTS-RED-SD
+    
     ind.h_z = 0 
     @inbounds for z in eachindex(ind.D_h)
-        ind.h_z += EcotoxSystems.softNEC2GUTS(ind.D_h[z], p.ind.e_h[z], p.ind.b_h[z])
+        ind.h_z += LL2GUTS(ind.D_h[z], p.ind.e_h[z], p.ind.b_h[z])
     end
     
     du.ind.S_z = -ind.h_z * ind.S_z # survival probability according to GUTS-RED-SD
