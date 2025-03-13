@@ -5,18 +5,10 @@ AmphiDEB global parameters with defaults.
 glb = ComponentVector(
     t_max = 56., # 8 - week simulation
     N0 = 1., # start with single value [] - only possible setting for ODE_simulator
-    dX_in = 20, # food input rate [mg d^-1] - assuming *ad libitum* feeding per default
-    k_V = 0., # dilution rate in the aquatic medium [V] - does not matter for ad libitum conditions
-    V_patch = 1., # simulated volume [d^-1] - does not matter for ad libitum conditions
-    T = 293.15, # ambient temperature
-    #tempfun = temperature_sinusoidal, # function describing Temperature as a function of time
-    ## parameters controlling temperature regime - elements have to match tempfun
-    ## defaults are realistic for monthly averages in central spain (Toledo)
-    #temp = ComponentVector( 
-    #    T_min = 273.15 + 3, # minimum yearly temperature (K); 
-    #    T_max = 273.15 + 22,
-    #    t_T_peak = 182., # day of the year at which temeprature peak occurs
-    #),
+    dX_in = [20., 20.], # food input rate [mg d^-1] - assuming *ad libitum* feeding per default
+    k_V = [0., 0.], # dilution rate in the aquatic medium [V] - does not matter for ad libitum conditions
+    V_patch = [1., 1.], # simulated volume [d^-1] - does not matter for ad libitum conditions
+    T = 293.15, # ambient temperature [K]
     C_W = [0.;], # exposure concentrations - currently only constant; given as a matrix. each row is a treatment, each column is a compound
     pathogen_inoculation_dose = 0., # amount of pathogen spores added to aquatic medium [# spores]
     pathogen_inoculation_time = 30., # time-point of pathogen inoculation [t]

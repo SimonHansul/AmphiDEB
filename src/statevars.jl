@@ -101,4 +101,3 @@ function initialize_statevars(p::ComponentVector)
         ind = individual_statevars
     )
 end
-

@@ -1,6 +1,22 @@
 # derivatives.jl
 # model functions which are used by all models
 
+"""
+    function dP_Z(
+        mu::Float64,
+        P_Z::Float64
+        )::Float64
+
+Derivative of the zoospore abundance `P_Z`. 
+
+This function does not take changes in zoopsore abundance due to infection into account. 
+This is handled in `Pathogen_Infection!`.
+
+args: 
+
+- `mu`: Zoospore background mortality rate
+- `P`_Z`: Current zoospore abundance in the environment
+"""
 @inline function dP_Z(
     mu::Float64,
     P_Z::Float64
@@ -17,6 +33,24 @@ function Pathogen_growth!(du, u, p, t)::Nothing
     return nothing
 end
 
+
+"""
+    function dP_S(
+        v0::Float64,
+        gamma::Float64,
+        P_Z::Float64,
+        eta::Float64,
+        f::Float64,
+        P_S::Float64,
+        sigma0::Float64,
+        sigma1::Float64,
+        Chi::Float64
+        )::Float64
+
+Derivative of the individual-specific sporangia abundace `P_S`.
+
+
+"""
 @inline function dP_S(
     v0::Float64,
     gamma::Float64,
@@ -28,7 +62,6 @@ end
     sigma1::Float64,
     Chi::Float64
     )::Float64
-
 
     return v0 * gamma * P_Z + v0 * eta * f * P_S - (sigma0 + sigma1 * Chi * P_S) * P_S
 
@@ -74,15 +107,6 @@ end
 
 function AmphODE_callbacks()
 
-    # life-stage callbacks are discontinued for this model atm, 
-    # I added the definition of life stages directly to the derivatives
-    # should also consider to define the life stage tranistions as smooth sigmoid switches, at least for metamorphs
-
-    #cb_larva = ContinuousCallback(condition_larva, effect_larva!)
-    #cb_metamorph = ContinuousCallback(condition_metamorph, effect_metamorph!)
-    #cb_juvenile = ContinuousCallback(condition_juvenile, effect_juvenile!)
-    #cb_adult = ContinuousCallback(condition_adult, effect_adult!)
-
     cb_inoculation = ContinuousCallback(condition_inoculation, effect_inoculation!)
     cb_renewal = ContinuousCallback(condition_renewal, effect_renewal!)
 
@@ -114,12 +138,6 @@ end
 
     @unpack glb, ind = u
 
-    # scaled damage dynamics based on the minimal model
-
-    @unpack glb, ind = u
-
-    # scaled damage dynamics based on the minimal model
-    
     ind.y_j .= 1.0 # reset relative responses 
     ind.h_z = p.ind[:h_b] # reset GUTS-SD hazard rate to background mortality
 
@@ -301,19 +319,19 @@ function y_T!(du, u, p, t)::Nothing
     return nothing
 end
 
-
-@inline function determine_K_X(
-    larva::Float64,
-    metamorph::Float64,
-    K_X_lrv::Float64, 
-    juvenile::Float64, 
-    adult::Float64, 
-    K_X_juv::Float64
-    )::Float64
-    
-    return ((larva + metamorph) * K_X_lrv) + ((juvenile + adult) * K_X_juv)
-
-end
+# not needed anymore with new f_X method?
+#@inline function determine_K_X(
+#    larva::Float64,
+#    metamorph::Float64,
+#    K_X_lrv::Float64, 
+#    juvenile::Float64, 
+#    adult::Float64, 
+#    K_X_juv::Float64
+#    )::Float64
+#    
+#    return ((larva + metamorph) * K_X_lrv) + ((juvenile + adult) * K_X_juv)
+#
+#end
 
 @inline function f_X(
     X::Float64,
@@ -322,6 +340,23 @@ end
     )::Float64
 
     return (X / V_patch) / ((X / V_patch) + K_X)
+
+end
+
+
+@inline function f_X(
+    larva::Float64,
+    metamorph::Float64, 
+    juvenile::Float64, 
+    adult::Float64,
+    X::Vector{Float64},
+    V_patch::Vector{Float64}, 
+    K_X_lrv::Vector{Float64},
+    K_X_juv::Vector{Float64}
+    )::Float64
+
+
+    return ((larva + metamorph) * f_X(X[1], V_patch[1], K_X_lrv)) + ((juvenile + adult) * f_X(X[2], V_patch[2], K_X_juv))
 
 end
 
@@ -404,7 +439,8 @@ Hence, we have `u.ind`, `u.glb`, `p.ind`, etc., instead of simply `u` and `p`.
 """
 function ingestion!(du, u, p, t)::Nothing
 
-    K_X = determine_K_X(u.ind[:larva], u.ind[:metamorph], p.ind[:K_X_lrv], u.ind[:juvenile], u.ind[:adult], p.ind[:K_X_juv]) #((u.ind.larva + u.ind.metamorph) * p.ind.K_X_lrv) + ((u.ind.juvenile + u.ind.adult) * p.ind.K_X_juv)
+    #K_X = determine_K_X(u.ind[:larva], u.ind[:metamorph], p.ind[:K_X_lrv], u.ind[:juvenile], u.ind[:adult], p.ind[:K_X_juv]) #((u.ind.larva + u.ind.metamorph) * p.ind.K_X_lrv) + ((u.ind.juvenile + u.ind.adult) * p.ind.K_X_juv)
+    
     u.ind.f_X = f_X(u.glb[:X], p.glb[:V_patch], K_X)
 
     dI_emb = calc_dI_emb(u.ind[:embryo], u.ind[:S], p.ind[:dI_max_emb], u.ind[:y_T]) # ingestion by embryos
@@ -414,7 +450,8 @@ function ingestion!(du, u, p, t)::Nothing
     
     du.ind.I = dI(dI_emb, dI_mt, dI_lrv, dI_juv_ad)
     du.ind.X_emb = -dI_emb
-    du.glb.X -= du.ind.I
+    du.glb.X[1] -= (u.ind[:larva] + u.ind[:metamorph]) * du.ind.I
+    du.glb.X[2] -= (u.ind[:juvenile] + u.ind[:adult]) * du.ind.I
 
     # assimilation flux
     du.ind.A = dA(du.ind[:I], p.ind[:eta_IA], u.ind[:y_j][3], u.ind[:y_jP][3])
@@ -762,8 +799,8 @@ end
 
 function AmphiDEB_ODE!(du, u, p, t)::Nothing
 
-    EcotoxSystems.DEBODE_global!(du, u, p, t)
-    Pathogen_growth!(du, u, p, t)
+    DEBODE_global_ecotox!(du, u, p, t)
+    #Pathogen_growth!(du, u, p, t)
     AmphiDEB_individual!(du, u, p, t)
 
     return nothing

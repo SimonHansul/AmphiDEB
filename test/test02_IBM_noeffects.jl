@@ -1,3 +1,4 @@
+
 using Pkg; Pkg.activate("test")
 
 using Test
@@ -13,7 +14,7 @@ using DataFrames, DataFramesMeta
 using StatsBase
 using EcotoxSystems
 
-using Revise
+    using Revise
 
 @time import AmphiDEB: defaultparams, ODE_simulator, Amphibian_DEB!, AmphiDEB_ODE!
 using AmphiDEB
@@ -123,20 +124,4 @@ end
 
 
 
-sim.spc[!,:lifestage] = [argmax([r.embryo, r.larva, r.metamorph, r.juvenile, r.adult]) for r in eachrow(sim.spc)]
-
-popstruct = combine(groupby(sim.spc, :t)) do df
-    DataFrame(
-        num_emb = sum(df.lifestage .== 1), 
-        num_larva = sum(df.lifestage .== 2),
-        num_metamorph = sum(df.lifestage .== 3),
-        num_juvenile = sum(df.lifestage .== 4),
-        num_adult = sum(df.lifestage .== 5),
-    )
-end
-
-@df popstruct plot(
-    :t, [:num_emb :num_larva :num_metamorph :num_juvenile :num_adult], 
-    label = ["embryos" "larvae" "metamorphs" "juveniles" "adults"]
-    )
 
