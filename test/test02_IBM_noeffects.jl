@@ -93,26 +93,14 @@ end
     p.spc.h_S = -log(0.75)
     p.spc.S_rel_crit = 0.5
 
-    #@time global sim = AmphiDEB.IBM_simulator(
-    #    p; 
-    #    showinfo = 60, # print update every so many days 
-    #    saveat = 1, # saving weekly output
-    #    dt = 1/24, # daily timestep - better to turn down to hourly for proper results
-    #    record_individuals = false 
-    #    )
+    @time global sim = AmphiDEB.IBM_simulator(
+        p; 
+        showinfo = 60, # print update every so many days 
+        saveat = 1, # saving weekly output
+        dt = 1/24, # daily timestep - better to turn down to hourly for proper results
+        record_individuals = false 
+        )
 
-
-    @time global sim = treplicates(
-        x -> AmphiDEB.IBM_simulator(
-            p; 
-            showinfo = 60, # print update every so many days 
-            saveat = 1, # saving weekly output
-            dt = 1/24, # daily timestep - better to turn down to hourly for proper results
-            record_individuals = false 
-            ), 
-        p,
-        3   
-    )
     
     #@test 2500 <= sim.glb.N[end] <= 3500 # expected abundance after 2 years
 
