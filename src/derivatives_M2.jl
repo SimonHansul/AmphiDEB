@@ -140,7 +140,7 @@ This leads to the following main differences:
 """
 function Amphibian_DEB_M2!(du, u, p, t)::Nothing
 
-    determine_life_stage!(du.ind, u.ind, p.ind, t)
+    determine_life_stage!(du, u, p, t)
     y_T!(du, u, p, t)
     eta_AS, kappa = life_stage_effects(du, u, p, t)
 
@@ -150,7 +150,7 @@ function Amphibian_DEB_M2!(du, u, p, t)::Nothing
     maturation!(du.ind, u.ind, p.ind, t, kappa)
     metamorphic_reserve_M2!(du.ind, u.ind, p.ind, t, eta_AS, kappa)
 
-    reproduction!(du.ind, u.ind, p.ind, t, kappa)
+    reproduction!(du, u, p, t, kappa)
 
     return nothing
 end

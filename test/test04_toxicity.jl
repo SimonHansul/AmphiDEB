@@ -24,9 +24,9 @@ import EcotoxSystems: constrmvec
 defaultparams.spc.dI_max_juv = 1
 AmphiDEB.calc_S_max_juv(defaultparams.spc)
 
-defaultparams.spc.k_D_j
-defaultparams.spc.e_z
-defaultparams.spc.b_z
+defaultparams.spc.KD
+defaultparams.spc.E
+defaultparams.spc.B
 
 @testset "Toxicity with default DEB parameters" begin 
     global p = deepcopy(defaultparams)
@@ -41,9 +41,9 @@ defaultparams.spc.b_z
     p.spc.H_j1 = 0.2
     p.spc.H_p = 40.
 
-    p.spc.k_D_j[pmoa_idx] = 1.
-    p.spc.e_z[pmoa_idx] = 2. 
-    p.spc.b_z[pmoa_idx] = 2.
+    p.spc.KD[pmoa_idx] = 1.
+    p.spc.E[pmoa_idx] = 2. 
+    p.spc.B[pmoa_idx] = 2.
 
     global sim = exposure(p -> ODE_simulator(
             p, 
@@ -79,6 +79,7 @@ defaultparams.spc.b_z
     #@test ([isapprox(1, sum([r.embryo, r.larva, r.metamorph, r.juvenile, r.adult])) for r in eachrow(sim)] |> unique)==[1] # check that exactly one life stage at a time is "true"
 end
 
+
 @testset "PMoA kappa" begin 
     global p = deepcopy(defaultparams)
 <
@@ -92,9 +93,9 @@ end
     p.spc.H_j1 = 0.2
     p.spc.H_p = 40.
 
-    p.spc.k_D_j[pmoa_idx] = 1.
-    p.spc.e_z[pmoa_idx] = 2. 
-    p.spc.b_z[pmoa_idx] = 2.
+    p.spc.KD[pmoa_idx] = 1.
+    p.spc.E[pmoa_idx] = 2. 
+    p.spc.B[pmoa_idx] = 2.
 
     global sim = exposure(p -> ODE_simulator(
             p, 

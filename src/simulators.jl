@@ -37,7 +37,7 @@ function IBM_simulator(
     # default global model
     init_global_statevars = initialize_global_statevars,
     global_ode! = EcotoxSystems.DEBODE_global!,
-    global_rules! = EcotoxSystems.default_global_rules!,
+    global_rules! = AmphiDEB_global_rules!,
     
     # default individual model
     init_individual_statevars = initialize_individual_statevars,

@@ -1,12 +1,39 @@
 # derivatives.jl
 # model functions which are used by all models
 
+@inline function dP_Z(
+    mu::Float64,
+    P_Z::Float64
+    )::Float64
+
+    return -mu * P_Z
+
+end
+
 function Pathogen_growth!(du, u, p, t)::Nothing
     
-    du.glb.P_Z = - p.pth.mu * u.glb.P_Z # change in zoospores in environment
+    du.glb.P_Z = dP_Z(p.pth[:mu], u.glb[:P_Z]) # change in zoospores in environment
     
     return nothing
 end
+
+@inline function dP_S(
+    v0::Float64,
+    gamma::Float64,
+    P_Z::Float64,
+    eta::Float64,
+    f::Float64,
+    P_S::Float64,
+    sigma0::Float64,
+    sigma1::Float64,
+    Chi::Float64
+    )::Float64
+
+
+    return v0 * gamma * P_Z + v0 * eta * f * P_S - (sigma0 + sigma1 * Chi * P_S) * P_S
+
+end
+
 
 function Pathogen_Infection!(du, u, p, t)::Nothing
 
@@ -17,8 +44,8 @@ function Pathogen_Infection!(du, u, p, t)::Nothing
     gamma = p.pth.gamma 
 
     # growth and killing of sporangia 
-    du.ind.P_S = p.pth.v0 * gamma * u.glb.P_Z + p.pth.v0 * p.pth.eta * p.pth.f * u.ind.P_S - (p.pth.sigma0 + p.pth.sigma1 * p.ind.Chi * u.ind.P_S) * u.ind.P_S
-    
+    du.ind.P_S = dP_S(p.pth[:v0], p.pth[:gamma], u.glb[:P_Z], p.pth[:eta], p.pth[:f], u.ind[:P_S], p.pth[:sigma0], p.pth[:sigma1], p.ind[:Chi])
+
     # feedback with zoospore population 
     du.glb.P_Z += p.pth.eta * (1-p.pth.f) * u.ind.P_S # release of spores
     du.glb.P_Z -= gamma * u.glb.P_Z # encystment
@@ -66,12 +93,21 @@ function AmphODE_callbacks()
 
 end
 
-@inline function LL2(x::Real, p::NTuple{2,Real})
+@inline function LL2(x::Float64, p::NTuple{2,Float64})::Float64
     return (1 / (1 + Complex(x / p[1]) ^ p[2])).re
 end
 
-LL2(x, p1, p2) = LL2(x, (p1, p2))
-LL2GUTS(x, p1, p2) = -log(LL2(x, (p1, p2)))
+@inline LL2(x::Float64, p1::Float64, p2::Float64)::Float64 = LL2(x, (p1, p2))
+@inline LL2GUTS(x::Float64, p1::Float64, p2::Float64)::Float64 = -log(LL2(x, (p1, p2)))
+
+@inline function minimal_TK(
+    embryo::Float64,
+    k_D::Float64, 
+    C_W::Float64,
+    D::Float64
+    )::Float64
+    return (1-embryo) * k_D * (C_W - D)
+end
 
 # mixture TKTD based on independent action model
 @inline function TKTD_mix_IA!(du, u, p, t)::Nothing
@@ -80,40 +116,155 @@ LL2GUTS(x, p1, p2) = -log(LL2(x, (p1, p2)))
 
     # scaled damage dynamics based on the minimal model
 
-    isnot_embryo = 1 - ind.embryo
+    @unpack glb, ind = u
+
+    # scaled damage dynamics based on the minimal model
     
-    for z in eachindex(glb.C_W)
-        # for sublethal effects, we broadcost over all PMoAs
-        @. du.ind.D_j[z,:] = isnot_embryo * @view(p.ind.k_D_j[z,:]) * (glb.C_W[z] - @view(ind.D_j[z,:]))
-        # for lethal effects, we have only one value per stressor
-        du.ind.D_h[z] = isnot_embryo * p.ind.k_D_h[z] * (glb.C_W[z] - ind.D_h[z])
+    ind.y_j .= 1.0 # reset relative responses 
+    ind.h_z = p.ind[:h_b] # reset GUTS-SD hazard rate to background mortality
+
+    for z in eachindex(glb.C_W) # for every chemical
+        for j in eachindex(ind.y_j) # for every PMoA
+            # calculate change in damage
+            du.ind.D_j[z,j] = minimal_TK(ind.embryo, p.ind.KD[z,j], glb.C_W[z], ind.D_j[z,j]) #(1 - ind.embryo) * p.ind.k_D_z[z, j] * (glb.C_W[z] - ind.D_z[z, j])
+            # update relative response with respect to PMoA j
+            ind.y_j *= LL2(ind.D_j[z,j], p.ind.E[z,j], p.ind.B[z,j])
+        end
+        # calculate change in damage for lethal effects
+        du.ind.D_h[z] = (1 - ind.embryo) * p.ind.KD_h[z] * (glb.C_W[z] - ind.D_h[z])
+        # update hazard rate
+        ind.h_z += LL2GUTS(ind.D_h[z], p.ind.E_h[z], p.ind.B_h[z])
     end
 
-    @. ind.y_z = LL2(ind.D_j, p.ind.e_z, p.ind.b_z) # relative responses per stressor and PMoA
-    
-    ind.y_j .= reduce(*, ind.y_z; dims=1) # relative responses per PMoA are obtained as the product over all chemical stressors
     ind.y_j[2] /= ind.y_j[2]^2 # for pmoas with increasing responses (M), the relative response has to be inverted  (x/x^2 == 1/x) 
-    
-    ind.h_z = 0 
-    @inbounds for z in eachindex(ind.D_h)
-        ind.h_z += LL2GUTS(ind.D_h[z], p.ind.e_h[z], p.ind.b_h[z])
-    end
     
     du.ind.S_z = -ind.h_z * ind.S_z # survival probability according to GUTS-RED-SD
     
     return nothing
 end
 
-# definition of life stages with sigmoid functions
+@inline function is_embryo(
+    X_emb::Float64;
+    beta = 1e3
+    )::Float64
+
+    return sig(X_emb, 0, 0, 1, beta = beta)
+
+end
+
+@inline function is_larva(
+    X_emb::Float64,
+    H::Float64,
+    H_j1::Float64,
+    y_H::Float64;
+    beta1::Float64 = 1e3,
+    beta2::Float64 = 1e7
+    )::Float64
+
+    return sig(X_emb, 0, 1, 0, beta = beta1) * sig(H, H_j1 * y_H, 1, 0, beta = beta2)
+
+end
+
+@inline function is_metamorph(
+    H::Float64, 
+    H_j1::Float64, 
+    y_H::Float64,
+    E_mt::Float64;
+    beta1::Float64 = 1e7, 
+    beta2::Float64 = 1e3, 
+    )::Float64
+
+    return sig(H, H_j1 * y_H, 0, 1, beta = beta1) * sig(E_mt, 0, 0, 1, beta = beta2) 
+
+end
+
+@inline function is_juvenile(
+    H::Float64,
+    H_j1::Float64,
+    y_H::Float64,
+    E_mt::Float64,
+    H_p::Float64;
+    beta1 = 1e3,
+    beta2 = 1e3,
+    beta3 = 1e3
+    )::Float64
+
+    return sig(H, H_j1 * y_H, 0, 1, beta = beta1) * sig(E_mt, 0, 1, 0, beta = beta2) * sig(H, H_p, 1, 0, beta = beta3)
+
+end
+
+@inline function is_adult(
+    H::Float64,
+    H_p::Float64;
+    beta = 1e3
+    )::Float64
+
+    return sig(H, H_p, 0, 1, beta = beta)
+
+end
+
+
 function determine_life_stage!(du, u, p, t)::Nothing
 
-    u.embryo = sig(u.X_emb, 0, 0, 1, beta = 1e3) # if there is still vitellus left, we are in embryo stage
-    u.larva = sig(u.X_emb, 0, 1, 0, beta = 1e3) * sig(u.H, p.H_j1 * u.y_j[5], 1, 0, beta = 1e7) # if the embryo is used up but the next maturity threshold is not reached, we are in larval stage
-    u.metamorph =  sig(u.H, p.H_j1 * u.y_j[5], 0, 1, beta = 1e7) * sig(u.E_mt, 0, 0, 1, beta = 1e3) # above the maturity threshold for Gosner stage 42, while there is still metamorphic reserve left, we are in metamorph stage
-    u.juvenile = sig(u.H, p.H_j1 * u.y_j[5], 0, 1, beta = 1e3) * sig(u.E_mt, 0, 1, 0, beta = 1e3) * sig(u.H, p.H_p, 1, 0, beta = 1e3) # after metamorphosis but below the threshold for puberty, we are in juvenile stage
-    u.adult = sig(u.H, p.H_p, 0, 1, beta = 1e3) # adult stage is reached beyond maturity threshold H_p
+    u.ind.embryo = is_embryo(u.ind[:X_emb])
+    u.ind.larva = is_larva(u.ind[:X_emb], u.ind[:H], p.ind[:H_j1], u.ind[:y_j][5])
+    u.ind.metamorph = is_metamorph(u.ind[:H], p.ind[:H_j1], u.ind[:y_j][5], u.ind[:E_mt]) 
+    u.ind.juvenile = is_juvenile(u.ind[:H], p.ind[:H_j1], u.ind[:y_j][5], u.ind[:E_mt], p.ind[:H_p]) 
+    u.ind.adult = is_adult(u.ind[:H], p.ind[:H_p]) 
 
     return nothing
+end
+
+@inline function calc_eta_AS(
+    embryo::Float64,
+    larva::Float64,
+    metamorph::Float64,
+    eta_AS_emb::Float64,
+    juvenile::Float64,
+    adult::Float64,
+    eta_AS_juv::Float64
+    )::Float64
+
+    return (embryo + larva + metamorph) * eta_AS_emb + (juvenile + adult) * eta_AS_juv
+
+end
+
+
+"""
+    calc_kappa(
+        embryo::Float64,
+        larva::Float64,
+        metamorph::Float64,
+        kappa_emb::Float64,
+        juvenile::Float64,
+        adult::Float64,
+        kappa_juv::Float64,
+        b_T::Float64, 
+        T_ref::Float64,
+        y_K::Float64
+        )::Float64
+
+Calculate `kappa` accounting for life-stage, temperature effects and chemical effects. 
+
+Temperature effects are implemented according to Romoli et al. (2024).
+"""
+@inline function calc_kappa(
+    embryo::Float64,
+    larva::Float64,
+    metamorph::Float64,
+    kappa_emb::Float64,
+    juvenile::Float64,
+    adult::Float64,
+    kappa_juv::Float64,
+    b_T::Float64, 
+    T_ref::Float64,
+    T::Float64,
+    y_K::Float64
+    )::Float64
+
+    kappa = (embryo + larva + metamorph) * kappa_emb + (juvenile + adult) * kappa_juv
+
+    return 1/(1 + (((1-kappa)/kappa) * exp(-b_T * ((T_ref - T)/T_ref))))*y_K
 end
 
 
@@ -126,22 +277,122 @@ e.g. if we have eta_AS_emb and eta_AS_juv, then eta_AS_emb is applied for eymbro
 """
 function life_stage_effects(du, u, p, t)::Tuple{Float64,Float64}
 
-    eta_AS = (u.ind.embryo + u.ind.larva + u.ind.metamorph) * p.ind.eta_AS_emb + (u.ind.juvenile + u.ind.adult) * p.ind.eta_AS_juv
-    kappa = (u.ind.embryo + u.ind.larva + u.ind.metamorph) * p.ind.kappa_emb + (u.ind.juvenile + u.ind.adult) * p.ind.kappa_juv
-
-    # adjust kappa for temperature
-    kappa = 1/(1 + (((1-kappa)/kappa) * exp(-p.ind.b_T * ((p.ind.T_ref - p.glb.T)/p.ind.T_ref))))
-    kappa *= u.ind.y_j[6]
+    eta_AS = calc_eta_AS(u.ind[:embryo], u.ind[:larva], u.ind[:metamorph], p.ind[:eta_AS_emb], u.ind[:juvenile], u.ind[:adult], p.ind[:eta_AS_juv])
+    kappa = calc_kappa(u.ind[:embryo], u.ind[:larva], u.ind[:metamorph], p.ind[:kappa_emb], u.ind[:juvenile], u.ind[:adult], p.ind[:kappa_juv], p.ind[:b_T], p.ind[:T_ref], p.glb[:T], u.ind.y_j[6])
 
     return eta_AS, kappa
+end
+
+@inline function y_T(
+    T_A::Float64,
+    T_ref::Float64,
+    T::Float64
+    )::Float64
+
+    return exp((T_A / T_ref) - (T_A / T))
+
 end
 
 # temperature correction
 function y_T!(du, u, p, t)::Nothing
     
-    u.ind.y_T = exp((p.ind.T_A / p.ind.T_ref) - (p.ind.T_A / p.glb.T))
+    u.ind.y_T = y_T(p.ind[:T_A], p.ind[:T_ref], p.glb[:T])
 
     return nothing
+end
+
+
+@inline function determine_K_X(
+    larva::Float64,
+    metamorph::Float64,
+    K_X_lrv::Float64, 
+    juvenile::Float64, 
+    adult::Float64, 
+    K_X_juv::Float64
+    )::Float64
+    
+    return ((larva + metamorph) * K_X_lrv) + ((juvenile + adult) * K_X_juv)
+
+end
+
+@inline function f_X(
+    X::Float64,
+    V_patch::Float64,
+    K_X::Float64
+    )::Float64
+
+    return (X / V_patch) / ((X / V_patch) + K_X)
+
+end
+
+@inline function calc_dI_emb(
+    embryo::Float64,
+    S::Float64,
+    dI_max_emb::Float64,
+    y_T::Float64
+    )::Float64
+
+    return embryo * (Complex(S)^(2/3)).re * dI_max_emb * y_T
+end
+
+@inline function calc_dI_mt(
+    metamorph::Float64,
+    f_X::Float64,
+    dI_max_lrv::Float64,
+    E_mt::Float64,
+    E_mt_max::Float64,
+    S::Float64,
+    y_T::Float64
+    )::Float64
+
+    return metamorph * f_X * dI_max_lrv * (E_mt / E_mt_max) * (Complex(S)^(2/3)).re * y_T
+
+end
+
+@inline function calc_dI_lrv(
+    larva::Float64,
+    f_X::Float64,
+    dI_max_lrv::Float64,
+    S::Float64,
+    y_T::Float64,
+    )::Float64
+
+    return larva * f_X * dI_max_lrv * (Complex(S)^(2/3)).re * y_T
+
+end
+
+@inline function calc_dI_juv(
+    juvenile::Float64,
+    adult::Float64,
+    f_X::Float64,
+    dI_max_juv::Float64,
+    S::Float64,
+    y_T::Float64
+    )::Float64
+
+    return (juvenile + adult) * f_X * dI_max_juv * (Complex(S)^(2/3)).re * y_T
+end
+
+@inline function dI(
+    dI_emb::Float64,
+    dI_mt::Float64, 
+    dI_lrv::Float64, 
+    dI_juv_ad::Float64
+    )::Float64
+
+    return dI_emb + dI_mt + dI_lrv + dI_juv_ad
+
+end
+
+@inline function dA(
+    dI::Float64, 
+    eta_IA::Float64, 
+    y_A::Float64, 
+    y_AP::Float64
+    )::Float64
+
+    return dI * eta_IA * y_A * y_AP
+
 end
 
 """
@@ -153,23 +404,74 @@ Hence, we have `u.ind`, `u.glb`, `p.ind`, etc., instead of simply `u` and `p`.
 """
 function ingestion!(du, u, p, t)::Nothing
 
-    K_X = ((u.ind.larva + u.ind.metamorph) * p.ind.K_X_lrv) + ((u.ind.juvenile + u.ind.adult) * p.ind.K_X_juv)
-    u.ind.f_X = (u.glb.X / p.glb.V_patch) / ((u.glb.X / p.glb.V_patch) + K_X)
+    K_X = determine_K_X(u.ind[:larva], u.ind[:metamorph], p.ind[:K_X_lrv], u.ind[:juvenile], u.ind[:adult], p.ind[:K_X_juv]) #((u.ind.larva + u.ind.metamorph) * p.ind.K_X_lrv) + ((u.ind.juvenile + u.ind.adult) * p.ind.K_X_juv)
+    u.ind.f_X = f_X(u.glb[:X], p.glb[:V_patch], K_X)
 
-    dI_emb = u.ind.embryo * (Complex(u.ind.S)^(2/3)).re * p.ind.dI_max_emb * u.ind.y_T
-    dI_mt = u.ind.metamorph * u.ind.f_X * p.ind.dI_max_lrv * (u.ind.E_mt / u.ind.E_mt_max) * (Complex(u.ind.S)^(2/3)).re * u.ind.y_T
-    dI_lrv = u.ind.larva * u.ind.f_X * p.ind.dI_max_lrv * (Complex(u.ind.S)^(2/3)).re * u.ind.y_T
-    dI_juv_ad = (u.ind.juvenile + u.ind.adult) * u.ind.f_X * p.ind.dI_max_juv * (Complex(u.ind.S)^(2/3)).re * u.ind.y_T
+    dI_emb = calc_dI_emb(u.ind[:embryo], u.ind[:S], p.ind[:dI_max_emb], u.ind[:y_T]) # ingestion by embryos
+    dI_mt = calc_dI_mt(u.ind[:metamorph], u.ind[:f_X], p.ind[:dI_max_lrv], u.ind[:E_mt], u.ind[:E_mt_max], u.ind[:S], u.ind[:y_T]) # residual ingestion flux by metamorphs (which may include tadpoles close to climax)
+    dI_lrv = calc_dI_lrv(u.ind[:larva], u.ind[:f_X], p.ind[:dI_max_lrv], u.ind[:S], u.ind[:y_T]) # ingestion by larvae
+    dI_juv_ad = calc_dI_juv(u.ind[:juvenile], u.ind[:adult], u.ind[:f_X], p.ind[:dI_max_juv], u.ind[:S], u.ind[:y_T])
     
-    du.ind.I = dI_emb + dI_mt + dI_lrv + dI_juv_ad
+    du.ind.I = dI(dI_emb, dI_mt, dI_lrv, dI_juv_ad)
     du.ind.X_emb = -dI_emb
-    
     du.glb.X -= du.ind.I
 
     # assimilation flux
-    du.ind.A = du.ind.I * p.ind.eta_IA * u.ind.y_j[3] * u.ind.y_jP[3]
+    du.ind.A = dA(du.ind[:I], p.ind[:eta_IA], u.ind[:y_j][3], u.ind[:y_jP][3])
 
     return nothing 
+end
+
+@inline function determine_k_M(
+    embryo::Float64,
+    larva::Float64,
+    metamorph::Float64,
+    k_M_emb::Float64,
+    juvenile::Float64,
+    adult::Float64,
+    k_M_juv::Float64
+    )::Float64
+
+    return (embryo + larva + metamorph) * k_M_emb + (juvenile + adult) * k_M_juv
+
+end
+
+@inline function determine_k_J(
+    embryo::Float64,
+    larva::Float64,
+    metamorph::Float64,
+    k_J_emb::Float64,
+    juvenile::Float64,
+    adult::Float64,
+    k_J_juv::Float64
+    )::Float64
+
+    return (embryo + larva + metamorph) * k_J_emb + (juvenile + adult) * k_J_juv
+
+end
+
+@inline function dM(
+    S::Float64,
+    k_M::Float64,
+    y_M::Float64,
+    y_MP::Float64,
+    y_T::Float64
+    )::Float64
+
+    return S * k_M * y_M * y_MP * y_T
+
+end
+
+@inline function dJ(
+    H::Float64,
+    k_J::Float64,
+    y_M::Float64,
+    y_MP::Float64,
+    y_T::Float64
+    )::Float64
+
+    return H * k_J * y_M * y_MP * y_T
+
 end
 
 """
@@ -179,60 +481,160 @@ Calculation of maintenance fluxes for amphibians.
 """
 function maintenance!(du, u, p, t)::Nothing 
 
-    k_M = (u.embryo + u.larva + u.metamorph) * p.k_M_emb + (u.juvenile + u.adult) * p.k_M_juv
-    k_J = (u.embryo + u.larva + u.metamorph) * p.k_J_emb + (u.juvenile + u.adult) * p.k_J_juv
+    k_M = determine_k_M(u.ind[:embryo], u.ind[:larva], u.ind[:metamorph], p.ind[:k_M_emb], u.ind[:juvenile], u.ind[:adult], p.ind[:k_M_juv])   
+    k_J = determine_k_J(u.ind[:embryo], u.ind[:larva], u.ind[:metamorph], p.ind[:k_J_emb], u.ind[:juvenile], u.ind[:adult], p.ind[:k_J_juv])   
 
-    du.M = u.S * k_M * u.y_j[2] * u.y_jP[2] * u.y_T # somatic maintenance flux
-    du.J = u.H * k_J * u.y_j[2] * u.y_jP[2] * u.y_T # maturity maintenance flux
-
-    return nothing
-end
-
-function reproduction!(du, u, p, t, kappa)::Nothing
-    
-    du.R = u.adult * clipneg(p.eta_AR * u.y_j[4] * u.y_jP[4] * ((1 - kappa) * du.A - du.J))  # reproduction flux
+    du.ind.M = dM(u.ind[:S], k_M, u.ind[:y_j][2], u.ind[:y_jP][2], u.ind[:y_T])
+    du.ind.J = dJ(u.ind[:H], k_J, u.ind[:y_j][2], u.ind[:y_jP][2], u.ind[:y_T])
 
     return nothing
 end
 
-"""
-    growth!(du, u, p, t)::Tuple{Real,Real}
+@inline function dR(
+    adult::Float64,
+    eta_AR::Float64,
+    y_R::Float64,
+    y_RP::Float64,
+    kappa::Float64,
+    dA::Float64,
+    dJ::Float64
+    )::Float64
 
-Calculation of growth fluxes for amphibians. <br>
-Returns life stage-specific values for `eta_AS` and `kappa`.
-"""
-function growth!(du, u, p, t, eta_AS, kappa)::Nothing
+    return adult * clipneg(eta_AR * y_R * y_RP * ((1 - kappa) * dA - dJ))
+
+end
+
+function reproduction!(du, u, p, t, kappa::Float64)::Nothing
     
-    #### somatic growth for embryos, juveniles and adults ####
-    # apply shrinking equation if maintenance costs are not covered 
-    # we use a sigmoid switch to avoid yet another if/else statement
+    du.ind.R = dR(u.ind[:adult], p.ind[:eta_AR] , u.ind[:y_j][4], u.ind[:y_jP][4], kappa, du.ind[:A], du.ind[:J])
 
-    dS_emb_juv_ad = sig( 
-        kappa * du.A, 
-        du.M, 
-        -(du.M / p.eta_SA - kappa * du.A), # shrinking equation applies if kappa*dA < dM
-        u.y_j[1] * eta_AS * (kappa * du.A - du.M) # otherwise, "normal" growth (but what is normal, really?)
+    return nothing
+end
+
+@inline function calc_dS_emb_juv_ad(
+    kappa::Float64,
+    dA::Float64,
+    dM::Float64,
+    eta_SA::Float64,
+    y_G::Float64,
+    y_GP::Float64,
+    eta_AS::Float64
+    )::Float64
+
+    return sig( 
+        kappa * dA, 
+        dM, 
+        -(dM / eta_SA - kappa * dA), 
+        y_G * y_GP * eta_AS * (kappa * dA - dM) 
     )    
-    
-    ##### somatic growth for larvae ####
-    # growth for larvae follows the same rule as for juveniles and adults, except that there is an additional split in the resource allocation
-    # as before, shrinking equation 
-    
-    dS_lrv = u.larva * sig( 
-        kappa * du.A, 
-        du.M, 
-        -(du.M / p.eta_SA - (1 - p.gamma) * kappa * du.A), 
-        eta_AS * u.y_j[1] * (1 - p.gamma) * ( kappa * du.A - du.M)
+
+end
+
+@inline function calc_dS_lrv(
+    kappa::Float64,
+    dA::Float64,
+    dM::Float64,
+    eta_SA::Float64,
+    gamma::Float64,
+    eta_AS::Float64,
+    y_G::Float64,
+    y_GP::Float64
+    )::Float64
+
+    return sig( 
+        kappa * dA, 
+        dM, 
+        -(dM / eta_SA - (1 - gamma) * kappa * dA), 
+        eta_AS * y_G * y_GP * (1 - gamma) * (kappa * dA - dM)
     )
+end
 
-    #### somatic growth for metamorphs ####
-    # for metamorph, structural growth is assumed to be driven by the residual assimilation flux
+@inline function calc_dS_mt(
+    metamorph::Float64,
+    eta_AS::Float64,
+    y_G::Float64,
+    y_GP::Float64,
+    dA::Float64
+    )::Float64
 
-    dS_mt = u.metamorph * eta_AS * u.y_j[1] * u.y_jP[1] * du.A
-    du.S = (u.embryo + u.juvenile + u.adult) * dS_emb_juv_ad + u.larva * dS_lrv + u.metamorph * dS_mt
+    return metamorph * eta_AS * y_G * y_GP * dA
+
+end
+
+@inline function dS(
+    embryo::Float64,
+    juvenile::Float64,
+    adult::Float64,
+    dS_emb_juv_ad::Float64,
+    larva::Float64,
+    dS_lrv::Float64,
+    metamorph::Float64,
+    dS_mt::Float64
+    )::Float64
+
+
+    return (embryo + juvenile + adult) * dS_emb_juv_ad + larva * dS_lrv + metamorph * dS_mt
+
+end
+
+"""
+    growth!(du, u, p, t)
+
+Calculation of life stage-specific growth fluxes for amphibians. <br>
+"""
+function growth!(du, u, p, t, eta_AS::Float64, kappa::Float64)::Nothing
+    
+    dS_emb_juv_ad = calc_dS_emb_juv_ad(kappa, du.ind[:A], du.ind[:M], p.ind[:eta_SA], u.ind[:y_j][1], u.ind[:y_jP][1], eta_AS)
+    dS_lrv = calc_dS_lrv(kappa, du.ind[:A], du.ind[:M], p.ind[:eta_SA], p.ind[:gamma], eta_AS, u.ind[:y_j][1], u.ind[:y_jP][1])
+    dS_mt = calc_dS_mt(u.ind[:metamorph], eta_AS, u.ind[:y_j][1], u.ind[:y_jP][1], du.ind[:A])
+    
+    du.ind.S = dS(u.ind[:embryo], u.ind[:juvenile], u.ind[:adult], dS_emb_juv_ad, u.ind[:larva], dS_lrv, u.ind[:metamorph], dS_mt)
 
     return nothing
 end 
+
+# metamorphic reserve dynamics for larvae
+@inline function calc_dE_mt_lrv(
+    gamma::Float64,
+    kappa::Float64,
+    dA::Float64,
+    dM::Float64
+    )::Float64
+
+    return gamma * (kappa * dA - dM)
+
+end
+
+# metamorphic reserve dynamics for metamorphs
+@inline function calc_dE_mt_mt(
+    dH::Float64,
+    dJ::Float64,
+    dM::Float64
+    )::Float64
+
+    return -(dH + dJ + dM)
+
+end
+
+@inline function dE_mt(
+    larva::Float64,
+    dE_mt_lrv::Float64,
+    metamorph::Float64,
+    dE_mt_mt::Float64
+    )::Float64
+
+    return larva * dE_mt_lrv + metamorph * dE_mt_mt
+
+end
+
+@inline function dE_mt_max(
+    larva::Float64,
+    dE_mt::Float64
+    )::Float64
+
+    return larva * dE_mt
+
+end
 
 """
     metamorphic_reserve!(du, u, p, t, kappa)::Nothing
@@ -242,13 +644,42 @@ Metamorphic reserve is accumulated during larval development and depleted during
 """
 function metamorphic_reserve!(du, u, p, t, eta_AS, kappa)::Nothing
     
-    # the metamorphic reserve is fueled by the gamma*kappa-fraction of the assimilation flux
-    dE_mt_lrv = p.gamma * (kappa * du.A - du.M) # before metamorphosis, reserve is built up
-    dE_mt_mt = -(du.H + du.J + du.M) # during metamorphosis, while there is still E_mt left, it will be used to fuel maintenance and maturation
-    du.E_mt = u.larva * dE_mt_lrv + u.metamorph * dE_mt_mt
-    du.E_mt_max = u.larva * du.E_mt
+    dE_mt_lrv = calc_dE_mt_lrv(p.ind[:gamma], kappa, du.ind[:A], du.ind[:M]) 
+    dE_mt_mt = calc_dE_mt_mt(du.ind[:H], du.ind[:J], du.ind[:M])
+    du.ind.E_mt = dE_mt(u.ind[:larva], dE_mt_lrv, u.ind[:metamorph], dE_mt_mt)
+    du.ind.E_mt_max = dE_mt_max(u.ind[:larva], du.ind[:E_mt])
 
     return nothing
+end
+
+@inline function calc_dH(
+    kappa::Float64,
+    dA::Float64,
+    dJ::Float64
+    )::Float64
+
+    return clipneg((1 - kappa) * dA - dJ)
+
+end
+
+@inline function calc_dH_mt(
+    kappa::Float64,
+    dM::Float64,
+    dJ::Float64
+    )::Float64
+
+    return clipneg((1 - kappa) * dM) / kappa - dJ
+
+end
+
+@inline function dH(
+    adult::Float64,
+    metamorph::Float64,
+    dH::Float64,
+    dH_mt::Float64
+    )::Float64
+
+    return (1 - adult) * (1 - metamorph) * dH + metamorph * dH_mt
 end
 
 """
@@ -256,22 +687,26 @@ end
 
 Calculation of maturation fluxes for amphibians.
 """
-function maturation!(du, u, p, t, kappa)::Nothing
+function maturation!(du, u, p, t, kappa::Float64)::Nothing
 
     # maturation follows kappa-rule for all but metamorphs
-    dH = clipneg((1 - kappa) * du.A - du.J)
+    dH_all = calc_dH(kappa, du.ind[:A], du.ind[:J])
 
     ## for metamorhps, we assume that all but somatic growth is fueled by E_mt, 
     # allowing us to apply the kappa rule to calculate dH from dM and dJ
-    dH_mt = clipneg((1 - kappa) * du.M) / kappa - du.J
+    dH_mt = calc_dH_mt(kappa, du.ind[:M], du.ind[:J])
 
     # for adults, there is no maturation => we only need to differentiate between non-adults and metamorph
-    du.H = (1 - u.adult) * (1 - u.metamorph) * dH + u.metamorph * dH_mt
+    du.ind.H = dH(u.ind[:adult], u.ind[:metamorph], dH_all, dH_mt)
 
     return nothing
 end
 
+"""
+    temperature_sinusoidal(t::Float64, T_max::Float64, T_min::Float64, t_peak ::Float64)::Float64
 
+Calculate seasonal fluctuations in temperature from a sinusoidal function. 
+"""
 @inline function temperature_sinusoidal(t::Float64, T_max::Float64, T_min::Float64, t_peak ::Float64)::Float64
 
     amplitude = (T_max - T_min) / 2
@@ -285,20 +720,11 @@ end
 function AmphiDEB_global!(du, u, p, t)::Nothing
 
     EcotoxSystems.DEBODE_global!(du, u, p, t)
-    #u.glb.T = p.glb.tempfun(t, p.glb.temp...) 
+    #u.ind.T = p.glb.tempfun(t, p.glb.temp...) 
 
     return nothing
 end
 
-
-function AmphiDEB_individual!(du, u, p, t)::Nothing
-
-    TKTD_mix_IA!(du, u, p, t) # TKTD following default model
-    Pathogen_Infection!(du, u, p, t) # infection, release of zoospores and relative response to sporangia density
-    Amphibian_DEB!(du, u, p, t) # Amphibian DEB model
-
-    return nothing
-end
 
 """ 
     Amphibian_DEB!(du, u, p, t)::Nothing
@@ -309,17 +735,26 @@ During metamorphosis, ingestion rate decreases gradually and reaches 0 at the en
 """
 function Amphibian_DEB!(du, u, p, t)::Nothing
 
-    determine_life_stage!(du.ind, u.ind, p.ind, t)
+    determine_life_stage!(du, u, p, t)
     y_T!(du, u, p, t)
     eta_AS, kappa = life_stage_effects(du, u, p, t)
 
     ingestion!(du, u, p, t)
-    maintenance!(du.ind, u.ind, p.ind, t)
-    growth!(du.ind, u.ind, p.ind, t, eta_AS, kappa)
-    maturation!(du.ind, u.ind, p.ind, t, kappa)
-    metamorphic_reserve!(du.ind, u.ind, p.ind, t, eta_AS, kappa)
+    maintenance!(du, u, p, t)
+    growth!(du, u, p, t, eta_AS, kappa)
+    maturation!(du, u, p, t, kappa)
+    metamorphic_reserve!(du, u, p, t, eta_AS, kappa)
 
-    reproduction!(du.ind, u.ind, p.ind, t, kappa)
+    reproduction!(du, u, p, t, kappa)
+
+    return nothing
+end
+
+function AmphiDEB_individual!(du, u, p, t)::Nothing
+
+    TKTD_mix_IA!(du, u, p, t) # TKTD following default model
+    Pathogen_Infection!(du, u, p, t) # infection, release of zoospores and relative response to sporangia density
+    Amphibian_DEB!(du, u, p, t) # Amphibian DEB model
 
     return nothing
 end

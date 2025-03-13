@@ -17,7 +17,7 @@ The PMoAs have a fixed order in the parameter matrices:
 3. Decrease in assimilation efficiency ($A$)
 4. Decrease in reproduction efficiency ($R$)
 5. Increase in maturity threshold for metamorphosis ($H$)
-6. Decrease in $\kappa$ ($\kappa$)
+6. Decrease in $\kappa$ ($\kappa$, acceleration of ontogenesis)
 
 ## Changelog 
 

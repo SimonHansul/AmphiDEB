@@ -33,8 +33,8 @@ AmphiDEB.calc_S_max_juv(defaultparams.spc)
     p.glb.dX_in = 15.
 
     p.spc.Z = Dirac(1.)
-    p.spc.e_z[3] = 1. 
-    p.spc.b_z[3] = .1
+    p.spc.E[3] = 1. 
+    p.spc.B[3] = .1
 
     sim = @replicates ODE_simulator(
             p, 
