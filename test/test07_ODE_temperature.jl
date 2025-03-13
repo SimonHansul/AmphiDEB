@@ -21,12 +21,7 @@ import EcotoxSystems: DEBODE_global!
 import EcotoxSystems: sig
 import EcotoxSystems: constrmvec
 
-
 using Plots 
-
-
-
-AmphiDEB.defaultparams.spc.b_T
 
 
 #@testset "Default parameters" begin

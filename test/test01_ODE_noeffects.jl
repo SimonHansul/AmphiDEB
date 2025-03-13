@@ -22,15 +22,22 @@ import EcotoxSystems: sig
 import EcotoxSystems: constrmvec
 
 
+plot(
+    plot(x -> EcotoxSystems.softNEC2neg(x, 1., 2.)/(EcotoxSystems.softNEC2neg(x, 1., 2.)^2), xlim = (0,2)),
+    plot(x -> AmphiDEB.LL2(x, 1., 2.)/(AmphiDEB.LL2(x, 1., 2.)^2), xlim = (0,2))
+)
+
 @testset "Default parameters" begin
+
     global p = deepcopy(defaultparams)
 
     p.glb.t_max = 365*2
     p.glb.pathogen_inoculation_time = Inf
     p.glb.dX_in = 20.
-    p.spc.H_p = 50.
+    p.spc.H_p = 55.
 
     S_max_anl = AmphiDEB.calc_S_max_juv(p.spc)
+    H_max_anl_juv = AmphiDEB.calc_H_eq_juv(p.spc)
 
     @time global sim = AmphiDEB.ODE_simulator(
             p, 
@@ -44,8 +51,8 @@ import EcotoxSystems: constrmvec
     sim[!,:W_tot] = sim.S .+ sim.E_mt 
     
     plt = plot_statevars(
-        sim, 
-        [:S, :H, :E_mt_rel, :R, :X_emb, :J, :dI_rel, :W_tot, :f_X, :metamorph, :juvenile, :adult], 
+        @subset(sim, :t .< 40), 
+        [:S, :H, :E_mt, :R, :X_emb, :J, :dI_rel, :W_tot, :f_X, :embryo, :larva, :metamorph], 
         xrotation = 45
         )
     hline!([p.spc.H_j1], subplot=2, color = :gray, linestyle = :dash)
@@ -94,9 +101,54 @@ import EcotoxSystems: constrmvec
 
     @test 0.9 < reldiff_kJ < 1.1
 
+    # comparing analytically calculated with simulated equilibrium maturity 
+    # for this we need to disengage H_p and re-run the simulation
+
+    p.glb.t_max = 365*10
+    p.spc.H_p = Inf
+    
+    @time global sim = AmphiDEB.ODE_simulator(
+            p, 
+            saveat = 1/24, # we need high-resolution output to verify the solution
+            );
+
+    @info "
+    Analytically caluclated equilibrium maturity: $(round(H_max_anl_juv, sigdigits = 3))
+    Simulated maximum maturity: $(round(maximum(sim.H)))
+    "
+
+    @test 0.8*H_max_anl_juv <= maximum(sim.H) <= 1.2*H_max_anl_juv 
+end
+
+begin # effect of gamma parameter
+
+    plt = plot(layout = (1,2), leg = true, size = (800,500), xlabel = "t", ylabel = ["W" "[E_mt]_W"])
+
+    
+    p.glb.t_max = 60
+    p.glb.pathogen_inoculation_time = Inf
+    p.glb.dX_in = 20.
+    p.spc.H_p = 55.
+
+
+    for gamma in [0.25, 0.5, 0.75]
+        
+        p.spc.gamma = gamma
+        sim = AmphiDEB.ODE_simulator(
+            p
+            );
+
+        @df sim plot!(plt, :t, :S .+ :E_mt, label = gamma, subplot = 1)
+        @df sim plot!(plt, :t, :E_mt ./ (:S .+ :E_mt), label = gamma, subplot = 2)
+
+    end
+
+    display(plt)
+
 end
 
 @testset "Randomized parameters" begin
+    
     global p = deepcopy(defaultparams)
 
     p.glb.t_max = 365*2
@@ -107,7 +159,6 @@ end
     p.spc.Z = truncated(Normal(1, 0.1), 0, Inf)
     p.spc.k_M_emb = truncated(Normal(0.11, 0.011), 0, Inf)
     p.spc.eta_AR = truncated(Normal(0.95, 0.095), 0, 1)
-
     p.spc.H_p = 50.
 
     S_max_anl = AmphiDEB.calc_S_max_juv(p.spc)
@@ -136,6 +187,7 @@ end
     display(plt)
     
     # check that all life stage indicators max out close to 1
+
     @test 0.99 < maximum(sim.embryo) < 1.01
     @test 0.99 < maximum(sim.larva) < 1.01
     @test 0.99 < maximum(sim.metamorph) < 1.01
@@ -148,3 +200,84 @@ end
 
     @test unique(isapprox.(1, sum_indicators, atol = 1e-3)) == [true]
 end
+
+
+@testset "Model variant M2" begin
+    global p = deepcopy(defaultparams)
+
+    p.glb.t_max = 365*2
+    p.glb.pathogen_inoculation_time = Inf
+    p.glb.dX_in = 20.
+    p.spc.H_p = 50.
+
+    p.spc.eta_AS_juv = 0.2
+
+    S_max_anl = AmphiDEB.calc_S_max_juv(p.spc)
+
+    @time global sim = AmphiDEB.ODE_simulator(
+            p, 
+            model = AmphiDEB.AmphiDEB_ODE_M2!, 
+            saveat = 1/24, # we need high-resolution output to verify the solution
+            );
+
+    sim[!,:E_mt_rel] = sim.E_mt ./ (sim.S + sim.E_mt)
+    sim[!,:dI] = vcat(0, diff(sim.I))
+    sim[!,:dI_rel] = sim.dI ./ (sim.S .^(2/3))
+    sim[!,:W_tot] = sim.S .+ sim.E_mt 
+    
+    plt = plot_statevars(
+        @subset(sim, :t .< 40), 
+        [:S, :H, :E_mt, :R, :X_emb, :J, :dI_rel, :W_tot, :f_X, :embryo, :larva, :metamorph], 
+        xrotation = 45
+        )
+    hline!([p.spc.H_j1], subplot=2, color = :gray, linestyle = :dash)
+
+    display(plt)
+
+    # check final structural mass
+
+    @test 0.8 * S_max_anl <= maximum(sim.S) <= 1.2 * S_max_anl 
+
+    # check that all life stage indicators max out close to 1
+    
+    @test 0.99 < maximum(sim.embryo) < 1.01
+    @test 0.99 < maximum(sim.larva) < 1.01
+    @test 0.99 < maximum(sim.metamorph) < 1.01
+    @test 0.99 < maximum(sim.juvenile) < 1.01
+    @test 0.99 < maximum(sim.adult) < 1.01
+
+    # check that the sum of life stage indicators is always approximately 1
+
+    sum_indicators = @. sim.embryo + sim.larva + sim.metamorph + sim.juvenile + sim.adult
+
+    @test unique(isapprox.(1, sum_indicators, atol = 1e-3)) == [true]
+
+    # verify that the size-specific maintenance rate is approximately constant by back-calculating k_M from the state variables
+        
+    sim[!,:dM] = vcat(0, diff(sim.M)) ./ vcat(0, diff(sim.t))
+    k_M = sim.dM ./ (sim.S .+ sim.E_mt)
+    
+    reldiff_kM = begin
+        kmin, kmax = extrema(k_M[50:end]) # we allow for a small "burn in" period: at the beginning, k_M is close to 0 and the relative error will be large 
+        kmax / kmin
+    end
+
+    @test 0.9 < reldiff_kM < 1.1
+
+    # same for k_J
+
+    sim[!,:dH] = vcat(0, diff(sim.J)) ./ vcat(0, diff(sim.t))
+    k_J = sim.dH ./ sim.H 
+
+    reldiff_kJ = begin
+        kmin, kmax = extrema(k_J[50:end]) 
+        kmax / kmin
+    end
+
+    @test 0.9 < reldiff_kJ < 1.1
+
+end
+#
+
+
+

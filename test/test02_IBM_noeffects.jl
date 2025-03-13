@@ -19,6 +19,7 @@ using Revise
 using AmphiDEB
 norm(x) = x ./ sum(x)
 
+
 @testset "Uninhibited growth" begin
     global p = deepcopy(defaultparams)
 
@@ -60,7 +61,40 @@ norm(x) = x ./ sum(x)
     plot(p_glb, p_spc, layout = grid(1,2, widths = norm([2/3, 1])), size = (1000,600)) |> display
 
 
-    @test 2e4 < maximum(sim.glb) < 2e5
+    # check expected order of magnitude of population size after 1.5 years of simulation with defaultparams
+    @test 500 < maximum(sim.glb) < 1000
+end
+
+# - trying suggestion by chatgpt
+#    - 1 - embryo is only calculated once
+#    - views are pre-allocated
+#    - comptime is 6s for t_max = 300, N_max = 60
+#    - allocs = 1.7 GB
+#    - materialize persists
+# - trying adjusted version with explicit looping instead of broadcasting
+# - try without recording individuals?
+#       - does not make a big difference 
+
+begin
+    p = deepcopy(defaultparams)
+
+    p.glb.t_max = 21.
+    p.glb.dX_in = 1000.
+    p.glb.k_V = 0.
+    p.glb.N0 = 10
+
+    p.spc.Z = truncated(Normal(1, 0.1), 0, Inf)
+    p.spc.tau_R = 1
+    p.spc.h_S = 0.
+    p.spc.H_p = 40.
+
+    @time sim = AmphiDEB.IBM_simulator(
+        p; 
+        showinfo = 60,  
+        saveat = 7, 
+        dt = 1/24, 
+        record_individuals = false
+        )
 end
 
 

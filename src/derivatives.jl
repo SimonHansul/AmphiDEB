@@ -66,6 +66,13 @@ function AmphODE_callbacks()
 
 end
 
+@inline function LL2(x::Real, p::NTuple{2,Real})
+    return (1 / (1 + Complex(x / p[1]) ^ p[2])).re
+end
+
+LL2(x, p1, p2) = LL2(x, (p1, p2))
+LL2GUTS(x, p1, p2) = -log(LL2(x, (p1, p2)))
+
 # mixture TKTD based on independent action model
 @inline function TKTD_mix_IA!(du, u, p, t)::Nothing
 
@@ -73,25 +80,23 @@ end
 
     # scaled damage dynamics based on the minimal model
 
-    #@. du.ind.D_z = (1 - ind.embryo) * p.ind.k_D_z * (glb.C_W - ind.D_z)
-    #@. du.ind.D_h = (1 - ind.embryo) * p.ind.k_D_h * (glb.C_W - ind.D_h)
-
+    isnot_embryo = 1 - ind.embryo
+    
     for z in eachindex(glb.C_W)
         # for sublethal effects, we broadcost over all PMoAs
-        @. du.ind.D_z[z,:] = (1 - ind.embryo) * @view(p.ind.k_D_z[z,:]) * (glb.C_W[z] - @view(ind.D_z[z,:]))
+        @. du.ind.D_j[z,:] = isnot_embryo * @view(p.ind.k_D_j[z,:]) * (glb.C_W[z] - @view(ind.D_j[z,:]))
         # for lethal effects, we have only one value per stressor
-        du.ind.D_h[z] = (1 - ind.embryo) * p.ind.k_D_h[z] * (glb.C_W[z] - ind.D_h[z])
+        du.ind.D_h[z] = isnot_embryo * p.ind.k_D_h[z] * (glb.C_W[z] - ind.D_h[z])
     end
 
-    @. ind.y_z = EcotoxSystems.softNEC2neg(ind.D_z, p.ind.e_z, p.ind.b_z) # relative responses per stressor and PMoA
+    @. ind.y_z = LL2(ind.D_j, p.ind.e_z, p.ind.b_z) # relative responses per stressor and PMoA
     
     ind.y_j .= reduce(*, ind.y_z; dims=1) # relative responses per PMoA are obtained as the product over all chemical stressors
     ind.y_j[2] /= ind.y_j[2]^2 # for pmoas with increasing responses (M), the relative response has to be inverted  (x/x^2 == 1/x) 
-
-    #ind.h_z = sum(@. softNEC2GUTS(ind.D_h, p.ind.e_h, p.ind.b_h)) # hazard rate according to GUTS-RED-SD
+    
     ind.h_z = 0 
     @inbounds for z in eachindex(ind.D_h)
-        ind.h_z += EcotoxSystems.softNEC2GUTS(ind.D_h[z], p.ind.e_h[z], p.ind.b_h[z])
+        ind.h_z += LL2GUTS(ind.D_h[z], p.ind.e_h[z], p.ind.b_h[z])
     end
     
     du.ind.S_z = -ind.h_z * ind.S_z # survival probability according to GUTS-RED-SD
@@ -126,8 +131,9 @@ function life_stage_effects(du, u, p, t)::Tuple{Float64,Float64}
 
     # adjust kappa for temperature
     kappa = 1/(1 + (((1-kappa)/kappa) * exp(-p.ind.b_T * ((p.ind.T_ref - p.glb.T)/p.ind.T_ref))))
+    kappa *= u.ind.y_j[6]
 
-    return eta_AS,kappa
+    return eta_AS, kappa
 end
 
 # temperature correction
@@ -216,18 +222,34 @@ function growth!(du, u, p, t, eta_AS, kappa)::Nothing
         kappa * du.A, 
         du.M, 
         -(du.M / p.eta_SA - (1 - p.gamma) * kappa * du.A), 
-        eta_AS * u.y_j[1] * ((1 - p.gamma) * kappa * du.A - du.M)
+        eta_AS * u.y_j[1] * (1 - p.gamma) * ( kappa * du.A - du.M)
     )
 
     #### somatic growth for metamorphs ####
     # for metamorph, structural growth is assumed to be driven by the residual assimilation flux
 
-    dS_mt = u.metamorph * eta_AS * u.y_j[1] * u.y_jP[1] * du.A  
-
+    dS_mt = u.metamorph * eta_AS * u.y_j[1] * u.y_jP[1] * du.A
     du.S = (u.embryo + u.juvenile + u.adult) * dS_emb_juv_ad + u.larva * dS_lrv + u.metamorph * dS_mt
 
     return nothing
 end 
+
+"""
+    metamorphic_reserve!(du, u, p, t, kappa)::Nothing
+
+Calculation of metamorphic reserve dynamics for amphibians. <br>
+Metamorphic reserve is accumulated during larval development and depleted during metamorphic climax. 
+"""
+function metamorphic_reserve!(du, u, p, t, eta_AS, kappa)::Nothing
+    
+    # the metamorphic reserve is fueled by the gamma*kappa-fraction of the assimilation flux
+    dE_mt_lrv = p.gamma * (kappa * du.A - du.M) # before metamorphosis, reserve is built up
+    dE_mt_mt = -(du.H + du.J + du.M) # during metamorphosis, while there is still E_mt left, it will be used to fuel maintenance and maturation
+    du.E_mt = u.larva * dE_mt_lrv + u.metamorph * dE_mt_mt
+    du.E_mt_max = u.larva * du.E_mt
+
+    return nothing
+end
 
 """
     maturation!(du, u, p, t, kappa)::Nothing
@@ -249,31 +271,6 @@ function maturation!(du, u, p, t, kappa)::Nothing
     return nothing
 end
 
-"""
-    metamorphic_reserve!(du, u, p, t, kappa)::Nothing
-
-Calculation of metamorphic reserve dynamics for amphibians. <br>
-Metamorphic reserve is accumulated during larval development and depleted during metamorphic climax. 
-"""
-function metamorphic_reserve!(du, u, p, t, eta_AS, kappa)::Nothing
-    
-    # the metamorphic reserve is fueled by the gamma*kappa-fraction of the assimilation flux
-    dE_mt_lrv = (1 - p.gamma) * kappa * du.A - du.M # before metamorphosis, reserve is built up
-    dE_mt_mt = -(du.H + du.J + du.M) # during metamorphosis, while there is still E_mt left, it will be used to fuel maintenance and maturation
-    du.E_mt = u.larva * dE_mt_lrv + u.metamorph * dE_mt_mt
-    du.E_mt_max = u.larva * du.E_mt
-
-    return nothing
-end
-
-function AmphiDEB_ODE!(du, u, p, t)::Nothing
-
-    EcotoxSystems.DEBODE_global!(du, u, p, t)
-    Pathogen_growth!(du, u, p, t)
-    AmphiDEB_individual!(du, u, p, t)
-
-    return nothing
-end
 
 @inline function temperature_sinusoidal(t::Float64, T_max::Float64, T_min::Float64, t_peak ::Float64)::Float64
 
@@ -323,6 +320,16 @@ function Amphibian_DEB!(du, u, p, t)::Nothing
     metamorphic_reserve!(du.ind, u.ind, p.ind, t, eta_AS, kappa)
 
     reproduction!(du.ind, u.ind, p.ind, t, kappa)
+
+    return nothing
+end
+
+
+function AmphiDEB_ODE!(du, u, p, t)::Nothing
+
+    EcotoxSystems.DEBODE_global!(du, u, p, t)
+    Pathogen_growth!(du, u, p, t)
+    AmphiDEB_individual!(du, u, p, t)
 
     return nothing
 end

@@ -80,3 +80,25 @@ Calculate larval von Bertalanffy growth rate.
 function calc_vB_growthrate_lrv(spc::ComponentVector)::Float64
     return (spc.eta_AS_lrv/(3*d_V)) * spc.k_M_lrv
 end
+
+
+"""
+    calc_H_eq_lrv(spc::ComponentVector)
+
+Calculate equilibrium maturity for larval stage. 
+"""
+function calc_H_eq_lrv(spc::AmphiDEB.ComponentVector)
+    S_max_lrv =  ((spc.kappa_emb * spc.dI_max_lrv * spc.eta_IA) / spc.k_M_emb)^3
+    return ((1 - spc.kappa_emb) * spc.dI_max_lrv * spc.eta_IA * S_max_lrv^(2/3)) / spc.k_J_emb
+end
+
+
+"""
+    calc_H_eq_juv(spc::ComponentVector)
+
+Calculate equilibrium maturity for juvenile/adult stages. 
+"""
+function calc_H_eq_juv(spc::AmphiDEB.ComponentVector)
+    S_max_juv =  ((spc.kappa_juv * spc.dI_max_juv * spc.eta_IA) / spc.k_M_juv)^3
+    return ((1 - spc.kappa_juv) * spc.dI_max_juv * spc.eta_IA * S_max_juv^(2/3)) / spc.k_J_juv
+end
