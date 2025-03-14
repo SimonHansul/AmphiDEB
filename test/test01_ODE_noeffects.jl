@@ -22,70 +22,21 @@ import EcotoxSystems: sig
 import EcotoxSystems: constrmvec
 
 
-# FIXME: simulation without pathogen inoculation causes error
-#   S becomes negative
-#   P_S is 0
-#       why?
-#       checking first occurrance of dS < 0
-#       debugger output is not useful
-#   changing P_S/A to P_S 
-#       this is the issue...
-#   changing P_S/A to P_S/S
-#       also works fine
-#   using P_S/A, but without Complex
-#       domain error is back
-#   trying to call Pathogen_infection after Amphibian_DEB
-#       no
-#   trying to separate Pathogen_infection from Pathogen_response
-#       no 
-#   debugger:
-#       things look fine for embryos
-#       X_emb goes negative and then...
-#       it keeps going more negative
-#           because embryo is not exactly 0, but close to 0
-#           error is ca. 1 % of model currency
-#           dS is still positive
-#  switching to Euler --> looks fine! 
-#       something about how Tsit5 treats the IVP / how it is implemented
-#  back to debugger 
-#       it looks like Tsit gets stuck during the transition from embryo to larva
-#   trying is_embryo as if/else instead of sig
-#       did not solve it
-#   same for larva
-#       hitting error in ODE solver; dt was forced beloz floating point 
-#       error occurs at the end of embryonic development
-#   changed beta for is_embryo to 1e10
-#       dt error with RK4
-#       domain error with Tsit 
-
-
-#   different observation
-#       simulation works when we TURN ON effects 
-#       what is different there?
-#           pathogen_inoculation_dose
-#           pathogen_inoculation_time
-#           E_P
-#           B_P
 @testset "Default parameters" begin
 
     global p = deepcopy(defaultparams)
 
     p.glb.t_max = 365*2
-    p.glb.pathogen_inoculation_time = 0.
-    p.glb.pathogen_inoculation_dose = 0.
+    p.glb.pathogen_inoculation_time = Inf
     p.glb.dX_in = [20., 20.]
-    p.glb.medium_renewals = [Inf]
-
     p.spc.H_p = 55.
-
-    p.spc.E_P .= 1.
 
     S_max_anl = AmphiDEB.calc_S_max_juv(p.spc)
     H_max_anl_juv = AmphiDEB.calc_H_eq_juv(p.spc)
 
     @time global sim = AmphiDEB.ODE_simulator(
             p, 
-            saveat = 1, # we need high-resolution output to verify the solution
+            saveat = 1/24, # we need high-resolution output to verify the solution
             );
 
     sim[!,:E_mt_rel] = sim.E_mt ./ (sim.S + sim.E_mt)

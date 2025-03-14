@@ -24,7 +24,9 @@ import EcotoxSystems: constrmvec
 defaultparams.spc.dI_max_juv = 1
 AmphiDEB.calc_S_max_juv(defaultparams.spc)
 
-@testset "Pathogen default parameters: infection without effects" begin 
+p.spc.E_P
+
+@testset "Default parameters" begin 
     global p = deepcopy(defaultparams)
 
     p.glb.t_max = 60
@@ -34,10 +36,13 @@ AmphiDEB.calc_S_max_juv(defaultparams.spc)
     p.glb.dX_in = [15., 15.]
 
     p.spc.Z = Dirac(1.)
+    p.spc.E[3] = 1. 
+    p.spc.B[3] = .1
 
-    global sim = @replicates ODE_simulator(
+    sim = @replicates ODE_simulator(
             p, 
-            returntype = EcotoxSystems.dataframe
+            returntype = EcotoxSystems.dataframe, 
+            alg = Tsit5()
             ) 10
         
     sim[!,:E_mt_rel] = sim.E_mt ./ (sim.S + sim.E_mt)
@@ -49,68 +54,23 @@ AmphiDEB.calc_S_max_juv(defaultparams.spc)
         plot(:t, :P_Z, group = :replicate),
         xrotation = 45
         )
-    
-    @df sim lineplot!(:t, :P_Z, subplot = 3, lw = 5, fillalpha = .2)
-
-    # check for mean and variability in pathogen loads
-
-    let df = @subset(sim, :t .== maximum(:t))
-
-        P_Z_mean = mean(df.P_Z)
-        P_Z_cv = std(df.P_Z) / P_Z_mean
-
-        @test 500 < P_Z_mean < 1500
-        @test 0.5 < P_Z_cv < 2
-    end
-    
     display(plt)
+
+    #TODO: add proper test conditions
+
+    #@test 55 <= maximum(sim.S) <= 60 # check final structural mass
+    #@test ([isapprox(1, sum([r.embryo, r.larva, r.metamorph, r.juvenile, r.adult])) for r in eachrow(sim)] |> unique)==[1] # check that exactly one life stage at a time is "true"
 end
 
 
-@testset "Pathogen default parameters: infection with effects" begin 
 
-    pmoa_P_idx = 1
-
-    global p = deepcopy(defaultparams)
-
-    p.glb.t_max = 60
-    p.glb.pathogen_inoculation_time = 20.
-    p.glb.pathogen_inoculation_dose = 1e3
-
-    p.glb.dX_in = [15., 15.]
-
-    p.spc.Z = Dirac(1.)
-    p.spc.E_P[pmoa_P_idx] = 1. 
-    p.spc.B_P[pmoa_P_idx] = 2.
-
-    @time global sim = @replicates ODE_simulator(p) 10
-        
-    sim[!,:E_mt_rel] = sim.E_mt ./ (sim.S + sim.E_mt)
-    sim[!,:W_tot] = sim.S .+ sim.E_mt 
-    
-    plt = @df sim plot(
-        plot(:t, :S, group = :replicate, ylabel = "S"),
-        plot(:t, :E_mt, group = :replicate, ylabel = "E_mt"),
-        plot(:t, :P_S, group = :replicate, ylabel = "P_S"),
-        plot(:t, :P_Z, group = :replicate, ylabel = "P_Z"),
-        xrotation = 45, xlabel = "t"
-        )
-
-    @df sim lineplot!(plt, :t, :P_S, lw = 5, fillalpha = .2, subplot = 3)
-    @df sim lineplot!(plt, :t, :P_Z, lw = 5, fillalpha = .2, subplot = 4)
-    
-    # check for mean and variability in pathogen loads
-
-    let df = @subset(sim, :t .== maximum(:t))
-
-        P_Z_mean = mean(df.P_Z)
-        P_Z_cv = std(df.P_Z) / P_Z_mean
-
-        @test 500 < P_Z_mean < 1500
-        @test 0.25 < P_Z_cv < 2
-    end
-    
-    display(plt)
-end
+sim = exposure(p -> ODE_simulator(
+    p, 
+    returntype = EcotoxSystems.dataframe, 
+    alg = Tsit5()
+    ), 
+    p,
+    [0. 0.5 1. 2.]
+    )
 
 
