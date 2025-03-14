@@ -138,7 +138,7 @@ spc = ComponentVector(
     =#
 
     Chi = LogNormal(log(1)+1^2, 1), # killing rate modifier, log-normal distribution with mode 1 and sigma 1, (mu = ln(mode)+sigma^2).
-    E_P = [Inf, Inf, Inf, Inf], # sensitivity parameter (threshold) for GUTS-SD module
+    E_P = [1e10, 1e10, 1e10, 1e10], # sensitivity parameter (threshold) for GUTS-SD module
     B_P = [2., 2., 2., 2.], # slope parameter for GUTS-SD module 
 )
 

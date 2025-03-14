@@ -2,7 +2,7 @@
 # model functions which are used by all models
 
 """
-    function dP_Z(
+    function dP_Z_ext(
         mu::Float64,
         P_Z::Float64
         )::Float64
@@ -17,7 +17,7 @@ args:
 - `mu`: Zoospore background mortality rate
 - `P`_Z`: Current zoospore abundance in the environment
 """
-@inline function dP_Z(
+@inline function dP_Z_ext(
     mu::Float64,
     P_Z::Float64
     )::Float64
@@ -28,7 +28,7 @@ end
 
 function Pathogen_growth!(du, u, p, t)::Nothing
     
-    du.glb.P_Z = dP_Z(p.pth[:mu], u.glb[:P_Z]) # change in zoospores in environment
+    du.glb.P_Z = dP_Z_ext(p.pth[:mu], u.glb[:P_Z]) # change in zoospores in environment
     
     return nothing
 end
@@ -68,25 +68,63 @@ Derivative of the individual-specific sporangia abundace `P_S`.
 end
 
 
-function Pathogen_Infection!(du, u, p, t)::Nothing
+"""
+    function y_P(
+        P_S::Float64, 
+        S::Float64, 
+        e_P::Float64, 
+        b_P::Float64
+        )::Float64
 
-    # life-stage specificity of the zoospore-host encounter rate 
-    # - currently turned off to simplify things 
-    # this needs to be re-evaluated. tadpoles do get infected but are unlikely to die 
-    # maybe only make the effect parameters life stage-specific?
-    gamma = p.pth.gamma 
+Calculate response to pathogen load.
+
+Assumes a log-logistic response between surface area-specific sporangia load and relative response.
+"""
+@inline function y_P(
+    P_S::Float64, 
+    S::Float64, 
+    e_P::Float64, 
+    b_P::Float64
+    )::Float64
+
+    return LL2(P_S/(S^(2/3)), e_P, b_P)
+
+end
+
+@inline function dP_Z_int(
+    eta::Float64, 
+    f::Float64, 
+    P_S::Float64,
+    gamma::Float64,
+    P_Z::Float64
+    )::Float64
+
+    return eta * (1-f) * P_S - gamma * P_Z
+
+end
+
+function Pathogen_response!(du, u, p, t)::Nothing
+    
+    # relative response to pathogen 
+    for j in eachindex(u.ind[:y_jP])
+        u.ind.y_jP[j] = 1. # y_P(u.ind[:P_S], u.ind[:S], p.ind[:E_P][j], p.ind.B_P[j]) #EcotoxSystems.LL2(u.ind.P_S/(Complex(u.ind.S^(2/3)).re), p.ind.e_P, p.ind.b_P) 
+    end
+    
+    # converting a monotonically decreasing to increasing response
+    u.ind.y_jP[2] /= u.ind.y_jP[2]^2
+
+    return nothing
+    
+end
+
+
+function Pathogen_infection!(du, u, p, t)::Nothing
 
     # growth and killing of sporangia 
     du.ind.P_S = dP_S(p.pth[:v0], p.pth[:gamma], u.glb[:P_Z], p.pth[:eta], p.pth[:f], u.ind[:P_S], p.pth[:sigma0], p.pth[:sigma1], p.ind[:Chi])
 
-    # feedback with zoospore population 
-    du.glb.P_Z += p.pth.eta * (1-p.pth.f) * u.ind.P_S # release of spores
-    du.glb.P_Z -= gamma * u.glb.P_Z # encystment
-
-    # relative response to pathogen 
-   
-    @. u.ind.y_jP = 1. # EcotoxSystems.LL2(u.ind.P_S/(Complex(u.ind.S^(2/3)).re), p.ind.e_P, p.ind.b_P) 
-    u.ind.y_jP[2] /= u.ind.y_jP[2]^2 # converting a monotonically decreasing to increasing response
+    # feedback with zoospore population: release and encystment
+    du.glb.P_Z += dP_Z_int(p.pth[:eta], p.pth[:f], u.ind[:P_S], p.pth[:gamma], u.glb[:P_Z]) 
 
     return nothing
 end
@@ -163,7 +201,7 @@ end
 
 @inline function is_embryo(
     X_emb::Float64;
-    beta = 1e3
+    beta = 1e10
     )::Float64
 
     return sig(X_emb, 0., 0., 1., beta = beta)
@@ -180,7 +218,7 @@ end
     )::Float64
 
     return sig(X_emb, 0., 1., 0., beta = beta1) * sig(H, H_j1 * y_H, 1., 0., beta = beta2)
-
+    #return (X_emb > 0) && (H > (H_j1 * y_H))
 end
 
 @inline function is_metamorph(
@@ -793,8 +831,9 @@ end
 function AmphiDEB_individual!(du, u, p, t)::Nothing
 
     TKTD_mix_IA!(du, u, p, t) # TKTD following default model
-    Pathogen_Infection!(du, u, p, t) # infection, release of zoospores and relative response to sporangia density
+    Pathogen_response!(du, u, p, t) # calculate relative response to pathogen
     Amphibian_DEB!(du, u, p, t) # Amphibian DEB model
+    Pathogen_infection!(du, u, p, t) # infection, release of zoospores 
 
     return nothing
 end
