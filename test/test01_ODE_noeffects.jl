@@ -36,6 +36,7 @@ import EcotoxSystems: constrmvec
 
     @time global sim = AmphiDEB.ODE_simulator(
             p, 
+            reltol = 1e-10,
             saveat = 1/24, # we need high-resolution output to verify the solution
             );
 
@@ -54,8 +55,8 @@ import EcotoxSystems: constrmvec
     display(plt)
 
     # check final structural mass
-
-    @test 0.8*S_max_anl <= maximum(sim.S) <= 1.2*S_max_anl 
+    
+    @test isapprox(S_max_anl, maximum(sim.S), rtol = 1e-2) 
 
     # check that all life stage indicators max out close to 1
     
@@ -200,6 +201,7 @@ end
         lineplot(:t, :H), 
         lineplot(:t, :E_mt_rel), 
         lineplot(:t, :R),
+        lineplot(:t, :adult),
         xrotation = 45
         )
     hline!([p.spc.H_j1], subplot=2, color = :gray, linestyle = :dash)
