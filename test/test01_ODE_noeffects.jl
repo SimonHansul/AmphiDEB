@@ -221,7 +221,6 @@ end
     @test unique(isapprox.(1, sum_indicators, atol = 1e-3)) == [true]
 end
 
-
 @testset "Model variant M2" begin
     global p = deepcopy(defaultparams)
 
