@@ -20,13 +20,12 @@ using EcotoxSystems
 using AmphiDEB
 norm(x) = x ./ sum(x)
 
-
 @testset "Uninhibited growth" begin
     global p = deepcopy(defaultparams)
 
     p.glb.t_max = 450.
-    p.glb.dX_in = 1000.
-    p.glb.k_V = 0.
+    p.glb.dX_in = [1000., 1000.]
+    p.glb.k_V = [0., 0.]
     p.glb.N0 = 10
 
     p.spc.Z = truncated(Normal(1, 0.1), 0, Inf)
@@ -80,8 +79,8 @@ end
     global p = deepcopy(defaultparams)
 
     p.glb.t_max = 365. * 3
-    p.glb.dX_in = 5_00.
-    p.glb.k_V = 0.1
+    p.glb.dX_in = [500., 500.]
+    p.glb.k_V = [0.1, 0.1]
     p.glb.N0 = 100
 
     p.spc.X_emb_int = truncated(Normal(1, 0.1), 0, Inf)

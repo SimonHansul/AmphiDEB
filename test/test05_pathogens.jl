@@ -24,13 +24,16 @@ import EcotoxSystems: constrmvec
 defaultparams.spc.dI_max_juv = 1
 AmphiDEB.calc_S_max_juv(defaultparams.spc)
 
+p.spc.E_P
+
 @testset "Default parameters" begin 
     global p = deepcopy(defaultparams)
 
     p.glb.t_max = 60
     p.glb.pathogen_inoculation_time = 20.
+    p.glb.pathogen_inoculation_dose = 1e3
 
-    p.glb.dX_in = 15.
+    p.glb.dX_in = [15., 15.]
 
     p.spc.Z = Dirac(1.)
     p.spc.E[3] = 1. 
@@ -48,6 +51,7 @@ AmphiDEB.calc_S_max_juv(defaultparams.spc)
     plt = @df sim plot(
         plot(:t, :S, group = :replicate),
         plot(:t, :E_mt, group = :replicate),
+        plot(:t, :P_Z, group = :replicate),
         xrotation = 45
         )
     display(plt)

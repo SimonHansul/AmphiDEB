@@ -123,7 +123,7 @@ end
     
     p.glb.t_max = 60
     p.glb.pathogen_inoculation_time = Inf
-    p.glb.dX_in = 20.
+    p.glb.dX_in = [20., 20.]
     p.spc.H_p = 55.
 
     gamma_values = [0.1, 0.25, 0.5, 0.75, 0.9]
@@ -174,7 +174,7 @@ end
 
     p.glb.t_max = 365*2
     p.glb.pathogen_inoculation_time = Inf
-    p.glb.dX_in = 20.
+    p.glb.dX_in = [20., 20.]
 
 
     p.spc.Z = truncated(Normal(1, 0.1), 0, Inf)
@@ -227,7 +227,7 @@ end
 
     p.glb.t_max = 365*2
     p.glb.pathogen_inoculation_time = Inf
-    p.glb.dX_in = 20.
+    p.glb.dX_in = [20., 20.]
     p.spc.H_p = 50.
 
     p.spc.eta_AS_juv = 0.2

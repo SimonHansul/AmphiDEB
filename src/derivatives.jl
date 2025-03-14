@@ -146,7 +146,7 @@ end
             # calculate change in damage
             du.ind.D_j[z,j] = minimal_TK(ind.embryo, p.ind.KD[z,j], glb.C_W[z], ind.D_j[z,j]) #(1 - ind.embryo) * p.ind.k_D_z[z, j] * (glb.C_W[z] - ind.D_z[z, j])
             # update relative response with respect to PMoA j
-            ind.y_j *= LL2(ind.D_j[z,j], p.ind.E[z,j], p.ind.B[z,j])
+            ind.y_j[j] *= LL2(ind.D_j[z,j], p.ind.E[z,j], p.ind.B[z,j])
         end
         # calculate change in damage for lethal effects
         du.ind.D_h[z] = (1 - ind.embryo) * p.ind.KD_h[z] * (glb.C_W[z] - ind.D_h[z])
@@ -166,7 +166,7 @@ end
     beta = 1e3
     )::Float64
 
-    return sig(X_emb, 0, 0, 1, beta = beta)
+    return sig(X_emb, 0., 0., 1., beta = beta)
 
 end
 
@@ -179,7 +179,7 @@ end
     beta2::Float64 = 1e7
     )::Float64
 
-    return sig(X_emb, 0, 1, 0, beta = beta1) * sig(H, H_j1 * y_H, 1, 0, beta = beta2)
+    return sig(X_emb, 0., 1., 0., beta = beta1) * sig(H, H_j1 * y_H, 1., 0., beta = beta2)
 
 end
 
@@ -192,7 +192,7 @@ end
     beta2::Float64 = 1e3, 
     )::Float64
 
-    return sig(H, H_j1 * y_H, 0, 1, beta = beta1) * sig(E_mt, 0, 0, 1, beta = beta2) 
+    return sig(H, H_j1 * y_H, 0., 1., beta = beta1) * sig(E_mt, 0., 0., 1., beta = beta2) 
 
 end
 
@@ -207,7 +207,7 @@ end
     beta3 = 1e3
     )::Float64
 
-    return sig(H, H_j1 * y_H, 0, 1, beta = beta1) * sig(E_mt, 0, 1, 0, beta = beta2) * sig(H, H_p, 1, 0, beta = beta3)
+    return sig(H, H_j1 * y_H, 0., 1., beta = beta1) * sig(E_mt, 0., 1., 0., beta = beta2) * sig(H, H_p, 1., 0., beta = beta3)
 
 end
 
@@ -217,7 +217,7 @@ end
     beta = 1e3
     )::Float64
 
-    return sig(H, H_p, 0, 1, beta = beta)
+    return sig(H, H_p, 0., 1., beta = beta)
 
 end
 
@@ -287,13 +287,13 @@ end
 
 
 """
-    life_stage_effects(du, u, p, t)::Tuple{Float64,Float64}
+    life_stage_and_plasticity_effects(du, u, p, t)::Tuple{Float64,Float64}
 
 Handles life-stage specificity of parameters. 
 The parameter notation foresees that the superscript indicates the first life stage for which a value is valid,
 e.g. if we have eta_AS_emb and eta_AS_juv, then eta_AS_emb is applied for eymbros, larvae and metamorphs, and eta_AS_juv is applied for juveniles and adults
 """
-function life_stage_effects(du, u, p, t)::Tuple{Float64,Float64}
+function life_stage_and_plasticity_effects(du, u, p, t)::Tuple{Float64,Float64}
 
     eta_AS = calc_eta_AS(u.ind[:embryo], u.ind[:larva], u.ind[:metamorph], p.ind[:eta_AS_emb], u.ind[:juvenile], u.ind[:adult], p.ind[:eta_AS_juv])
     kappa = calc_kappa(u.ind[:embryo], u.ind[:larva], u.ind[:metamorph], p.ind[:kappa_emb], u.ind[:juvenile], u.ind[:adult], p.ind[:kappa_juv], p.ind[:b_T], p.ind[:T_ref], p.glb[:T], u.ind.y_j[6])
@@ -312,26 +312,14 @@ end
 end
 
 # temperature correction
-function y_T!(du, u, p, t)::Nothing
+function Arrhenius!(du, u, p, t)::Nothing
     
     u.ind.y_T = y_T(p.ind[:T_A], p.ind[:T_ref], p.glb[:T])
 
     return nothing
 end
 
-# not needed anymore with new f_X method?
-#@inline function determine_K_X(
-#    larva::Float64,
-#    metamorph::Float64,
-#    K_X_lrv::Float64, 
-#    juvenile::Float64, 
-#    adult::Float64, 
-#    K_X_juv::Float64
-#    )::Float64
-#    
-#    return ((larva + metamorph) * K_X_lrv) + ((juvenile + adult) * K_X_juv)
-#
-#end
+
 
 @inline function f_X(
     X::Float64,
@@ -350,9 +338,9 @@ end
     juvenile::Float64, 
     adult::Float64,
     X::Vector{Float64},
-    V_patch::Vector{Float64}, 
-    K_X_lrv::Vector{Float64},
-    K_X_juv::Vector{Float64}
+    V_patch::Vector{Real}, 
+    K_X_lrv::Float64,
+    K_X_juv::Float64
     )::Float64
 
 
@@ -441,7 +429,7 @@ function ingestion!(du, u, p, t)::Nothing
 
     #K_X = determine_K_X(u.ind[:larva], u.ind[:metamorph], p.ind[:K_X_lrv], u.ind[:juvenile], u.ind[:adult], p.ind[:K_X_juv]) #((u.ind.larva + u.ind.metamorph) * p.ind.K_X_lrv) + ((u.ind.juvenile + u.ind.adult) * p.ind.K_X_juv)
     
-    u.ind.f_X = f_X(u.glb[:X], p.glb[:V_patch], K_X)
+    u.ind.f_X = f_X(u.ind[:larva], u.ind[:metamorph], u.ind[:juvenile], u.ind[:adult], u.glb[:X], p.glb[:V_patch], p.ind[:K_X_lrv], p.ind[:K_X_juv])
 
     dI_emb = calc_dI_emb(u.ind[:embryo], u.ind[:S], p.ind[:dI_max_emb], u.ind[:y_T]) # ingestion by embryos
     dI_mt = calc_dI_mt(u.ind[:metamorph], u.ind[:f_X], p.ind[:dI_max_lrv], u.ind[:E_mt], u.ind[:E_mt_max], u.ind[:S], u.ind[:y_T]) # residual ingestion flux by metamorphs (which may include tadpoles close to climax)
@@ -578,12 +566,11 @@ end
     y_GP::Float64
     )::Float64
 
-    return sig( 
-        kappa * dA, 
-        dM, 
-        -(dM / eta_SA - (1 - gamma) * kappa * dA), 
-        eta_AS * y_G * y_GP * (1 - gamma) * (kappa * dA - dM)
-    )
+    if (kappa * dA) > dM
+        return eta_AS * y_G * y_GP * (1 - gamma) * (kappa * dA - dM)
+    else
+        return -(dM / eta_SA - (1 - gamma) * kappa * dA)
+    end
 end
 
 @inline function calc_dS_mt(
@@ -754,10 +741,26 @@ Calculate seasonal fluctuations in temperature from a sinusoidal function.
 
 end
 
+@inline function dX(
+    dX_in::Float64,
+    k_V::Float64,
+    X::Float64
+    )::Float64 
+
+    return dX_in - k_V * X
+
+end
+
 function AmphiDEB_global!(du, u, p, t)::Nothing
 
-    EcotoxSystems.DEBODE_global!(du, u, p, t)
-    #u.ind.T = p.glb.tempfun(t, p.glb.temp...) 
+    Pathogen_growth!(du, u, p, t)
+
+    # calculate change in resource abundace for each resource
+    for i in eachindex(u.glb[:X])
+        du.glb.X[i] = dX(p.glb[:dX_in][i], p.glb[:k_V][i], u.glb[:X][i])
+    end
+    
+    #u.glb.T = p.glb.tempfun(t, p.glb.temp...) # seasonally fluctuating temperature could be added here
 
     return nothing
 end
@@ -773,8 +776,8 @@ During metamorphosis, ingestion rate decreases gradually and reaches 0 at the en
 function Amphibian_DEB!(du, u, p, t)::Nothing
 
     determine_life_stage!(du, u, p, t)
-    y_T!(du, u, p, t)
-    eta_AS, kappa = life_stage_effects(du, u, p, t)
+    Arrhenius!(du, u, p, t)
+    eta_AS, kappa = life_stage_and_plasticity_effects(du, u, p, t)
 
     ingestion!(du, u, p, t)
     maintenance!(du, u, p, t)
@@ -799,8 +802,7 @@ end
 
 function AmphiDEB_ODE!(du, u, p, t)::Nothing
 
-    DEBODE_global_ecotox!(du, u, p, t)
-    #Pathogen_growth!(du, u, p, t)
+    AmphiDEB_global!(du, u, p, t)
     AmphiDEB_individual!(du, u, p, t)
 
     return nothing
