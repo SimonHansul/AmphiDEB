@@ -52,3 +52,16 @@ The PMoAs have a fixed order in the parameter matrices:
 
 - Implemented PMoA 6: Decrease in kappa
 - Adjusted default params to be compatible with log-logistic responses
+
+
+### v0.2.0
+
+
+**Breaking changes**:
+
+- `glb.dX_in`, `glb.k_V` and `glb.V_patch` have to be provided as 2-element Vectors. The elements represent the aquatic and terrestric environment, respectively. 
+
+
+**Non-breaking changes**
+
+- Optimized model implementation.
