@@ -25,8 +25,8 @@ norm(x) = x ./ sum(x)
     global p = deepcopy(defaultparams)
 
     p.glb.t_max = 450.
-    p.glb.dX_in = 1000.
-    p.glb.k_V = 0.
+    p.glb.dX_in = [1000., 1000.]
+    p.glb.k_V = [0., 0.]
     p.glb.N0 = 10
 
     p.spc.Z = truncated(Normal(1, 0.1), 0, Inf)
@@ -76,12 +76,12 @@ end
 #    )
 
 
-@testset "Simulation with density-dependence" begin
+@testset "Simulation with density-dependence and background mortality" begin
     global p = deepcopy(defaultparams)
 
     p.glb.t_max = 365. * 3
-    p.glb.dX_in = 5_00.
-    p.glb.k_V = 0.1
+    p.glb.dX_in = [500., 500.]
+    p.glb.k_V = [0.1, 0.1]
     p.glb.N0 = 100
 
     p.spc.X_emb_int = truncated(Normal(1, 0.1), 0, Inf)
@@ -124,4 +124,21 @@ end
 
 
 
+#@userplot StackedArea
+## a simple "recipe" for Plots.jl to get stacked area plots
+## usage: stackedarea(xvector, datamatrix, plotsoptions)
+#@recipe function f(pc::StackedArea)
+#    x, y = pc.args
+#    n = length(x)
+#    y = cumsum(y, dims=2)
+#    seriestype := :shape
+#
+#    # create a filled polygon for each item
+#    for c=1:size(y,2)
+#        sx = vcat(x, reverse(x))
+#        sy = vcat(y[:,c], c==1 ? zeros(n) : reverse(y[:,c-1]))
+#        @series (sx, sy)
+#    end
+#end
 
+# stackedarea(x, [a b c])

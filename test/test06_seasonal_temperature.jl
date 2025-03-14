@@ -1,3 +1,5 @@
+#TODO: implement seasonally fluctuating temperatures and add test
+
 using Pkg; Pkg.activate("test")
 
 using Test

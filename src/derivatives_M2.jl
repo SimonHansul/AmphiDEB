@@ -9,8 +9,9 @@ Hence, we have `u.ind`, `u.glb`, `p.ind`, etc., instead of simply `u` and `p`.
 """
 function ingestion_M2!(du, u, p, t)::Nothing
 
-    K_X = ((u.ind.larva + u.ind.metamorph) * p.ind.K_X_lrv) + ((u.ind.juvenile + u.ind.adult) * p.ind.K_X_juv)
-    u.ind.f_X = (u.glb.X / p.glb.V_patch) / ((u.glb.X / p.glb.V_patch) + K_X)
+
+    u.ind.f_X = f_X(u.ind[:larva], u.ind[:metamorph], u.ind[:juvenile], u.ind[:adult], u.glb[:X], p.glb[:V_patch], p.ind[:K_X_lrv], p.ind[:K_X_juv])
+
 
     dI_emb = u.ind.embryo * (Complex(u.ind.S + u.ind.E_mt)^(2/3)).re * p.ind.dI_max_emb * u.ind.y_T
     dI_mt = u.ind.metamorph * u.ind.f_X * p.ind.dI_max_lrv * (u.ind.E_mt / u.ind.E_mt_max) * (Complex(u.ind.S)^(2/3)).re * u.ind.y_T
@@ -20,7 +21,10 @@ function ingestion_M2!(du, u, p, t)::Nothing
     du.ind.I = dI_emb + dI_mt + dI_lrv + dI_juv_ad
     du.ind.X_emb = -dI_emb
     
-    du.glb.X -= du.ind.I
+    du.ind.I = dI(dI_emb, dI_mt, dI_lrv, dI_juv_ad)
+    du.ind.X_emb = -dI_emb
+    du.glb.X[1] -= (u.ind[:larva] + u.ind[:metamorph]) * du.ind.I
+    du.glb.X[2] -= (u.ind[:juvenile] + u.ind[:adult]) * du.ind.I
 
     # assimilation flux
     du.ind.A = du.ind.I * p.ind.eta_IA * u.ind.y_j[3] * u.ind.y_jP[3]
@@ -110,7 +114,7 @@ Complete ODE system for alternative formulation of the AmphiDEB model (see `Amph
 """
 function AmphiDEB_ODE_M2!(du, u, p, t)::Nothing
 
-    EcotoxSystems.DEBODE_global!(du, u, p, t)
+    AmphiDEB_global!(du, u, p, t)
     Pathogen_growth!(du, u, p, t)
     AmphiDEB_individual_M2!(du, u, p, t)
 
@@ -141,13 +145,12 @@ This leads to the following main differences:
 function Amphibian_DEB_M2!(du, u, p, t)::Nothing
 
     determine_life_stage!(du, u, p, t)
-    y_T!(du, u, p, t)
-    eta_AS, kappa = life_stage_effects(du, u, p, t)
+    eta_AS, kappa = life_stage_and_temperature_effects(du, u, p, t)
 
     ingestion_M2!(du, u, p, t)
     maintenance_M2!(du.ind, u.ind, p.ind, t)
     growth_M2!(du.ind, u.ind, p.ind, t, eta_AS, kappa)
-    maturation!(du.ind, u.ind, p.ind, t, kappa)
+    maturation!(du, u, p, t, kappa)
     metamorphic_reserve_M2!(du.ind, u.ind, p.ind, t, eta_AS, kappa)
 
     reproduction!(du, u, p, t, kappa)

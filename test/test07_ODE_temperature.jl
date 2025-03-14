@@ -30,7 +30,7 @@ begin
 
     p.glb.t_max = 80.
     p.glb.pathogen_inoculation_time = Inf
-    p.glb.dX_in = 20.
+    p.glb.dX_in = [20., 20.]
     p.spc.H_p = 50.
 
     global sims = DataFrame()
@@ -53,19 +53,10 @@ begin
         append!(sims, sim)
     end
         
-    @df sims plot(:t, :W_tot, group = :T, label = hcat(unique(:T)...), leg = true)
+    @df sims plot(
+        :t, :W_tot, group = :T, label = hcat(unique(:T)...), leg = true, 
+        xlabel = "t", ylabel = "W", legendtitle = "T [°C]", legendtitlefontsize = 10
+    )
 end
-
-
-
-
-
-
-
-
-
-
-
-
 
 

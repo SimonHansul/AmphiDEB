@@ -56,7 +56,7 @@ import EcotoxSystems: constrmvec
 
     # check final structural mass
     
-    @test isapprox(S_max_anl, maximum(sim.S), rtol = 1e-2) 
+    @test isapprox(S_max_anl, maximum(sim.S), atol = 5) 
 
     # check that all life stage indicators max out close to 1
     
@@ -115,16 +115,16 @@ import EcotoxSystems: constrmvec
     @test 0.8*H_max_anl_juv <= maximum(sim.H) <= 1.2*H_max_anl_juv 
 end
 
-@testset "Effect of gamma on shape of the growth trajectory" begin # effect of gamma parameter
+@testset "Effect of gamma on shape of the growth trajectory" begin
 
     maxscale(x) = x ./ maximum(x)
 
-    plt = plot(layout = (2,2), leg = true, size = (800,750), xlabel = "t", ylabel = ["W" "[E_mt]" "W_scaled"])
+    plt = plot(layout = (2,2), leg = true, size = (800,750), xlabel = ["t" "t" "t_scaled"], ylabel = ["W" "[E_mt]" "W_scaled"])
     plot!(plt, subplot = 4, xaxis = false, yaxis = false, grid = false, xlabel = "", ylabel = "")
     
     p.glb.t_max = 60
     p.glb.pathogen_inoculation_time = Inf
-    p.glb.dX_in = 20.
+    p.glb.dX_in = [20., 20.]
     p.spc.H_p = 55.
 
     gamma_values = [0.1, 0.25, 0.5, 0.75, 0.9]
@@ -175,7 +175,7 @@ end
 
     p.glb.t_max = 365*2
     p.glb.pathogen_inoculation_time = Inf
-    p.glb.dX_in = 20.
+    p.glb.dX_in = [20., 20.]
 
 
     p.spc.Z = truncated(Normal(1, 0.1), 0, Inf)
@@ -229,7 +229,7 @@ end
 
     p.glb.t_max = 365*2
     p.glb.pathogen_inoculation_time = Inf
-    p.glb.dX_in = 20.
+    p.glb.dX_in = [20., 20.]
     p.spc.H_p = 50.
 
     p.spc.eta_AS_juv = 0.2
