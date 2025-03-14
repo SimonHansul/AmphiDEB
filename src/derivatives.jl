@@ -572,12 +572,11 @@ end
     y_GP::Float64
     )::Float64
 
-    return sig( 
-        kappa * dA, 
-        dM, 
-        -(dM / eta_SA - (1 - gamma) * kappa * dA), 
-        eta_AS * y_G * y_GP * (1 - gamma) * (kappa * dA - dM)
-    )
+    if (kappa * dA)>dM
+        return  eta_AS * y_G * y_GP * (1 - gamma) * (kappa * dA - dM)
+    else
+        return -(dM / eta_SA - (1 - gamma) * kappa * dA)
+    end
 end
 
 @inline function calc_dS_mt(
@@ -673,7 +672,7 @@ end
 Calculation of metamorphic reserve dynamics for amphibians. <br>
 Metamorphic reserve is accumulated during larval development and depleted during metamorphic climax. 
 """
-function metamorphic_reserve!(du, u, p, t, eta_AS, kappa)::Nothing
+function metamorphic_reserve!(du, u, p, t, eta_AS::Float64, kappa::Float64)::Nothing
     
     dE_mt_lrv = calc_dE_mt_lrv(p.ind[:gamma], kappa, du.ind[:A], du.ind[:M]) 
     dE_mt_mt = calc_dE_mt_mt(du.ind[:H], du.ind[:J], du.ind[:M])
