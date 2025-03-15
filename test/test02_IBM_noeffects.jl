@@ -1,32 +1,24 @@
-begin 
-    using Pkg; Pkg.activate("test")
 
-    using Test
-    using Distributions
-    using OrdinaryDiffEq
+using Pkg; Pkg.activate("test")
 
-    using Plots, StatsPlots, Plots.Measures
-    default(leg = false, lw = 1.5)
+using Test
+using Distributions
+using OrdinaryDiffEq
 
-    include("testutils.jl")
+using Plots, StatsPlots, Plots.Measures
+default(leg = false, lw = 1.5)
 
-    using DataFrames, DataFramesMeta
-    using StatsBase
+include("testutils.jl")
+
+using DataFrames, DataFramesMeta
+using StatsBase
+using EcotoxSystems
 
     using Revise
 
-    @time import AmphiDEB: defaultparams, ODE_simulator, Amphibian_DEB!, AmphiDEB_ODE!
-    using AmphiDEB
-    using EcotoxSystems
-    import EcotoxSystems: DEBODE_global!
-
-    import EcotoxSystems: sig
-    import EcotoxSystems: constrmvec
-    import AmphiDEB: IBM_simulator
-
-    import CSV
-    norm(x) = x ./ sum(x)
-end
+@time import AmphiDEB: defaultparams, ODE_simulator, Amphibian_DEB!, AmphiDEB_ODE!
+using AmphiDEB
+norm(x) = x ./ sum(x)
 
 function define_defaultparams()::EcotoxSystems.ComponentVector
 
@@ -73,8 +65,8 @@ function define_defaultparams()::EcotoxSystems.ComponentVector
     return p
 end
 
-begin
-    p = define_defaultparams() #
+@testset "Uninhibited growth" begin
+    global p = define_defaultparams() 
 
     p.glb.t_max = 365. * 2
     p.glb.dX_in = [5., 25.]
@@ -90,9 +82,13 @@ begin
         p; 
         showinfo = 60,  # update every 30 days
         saveat = 7, # saving weekly output
-        dt = 1 # daily timestep - better to turn down to hourly for proper results
-    )
+        dt = 1/24, # daily timestep - better to turn down to hourly for proper results
+        record_individuals = false
+        )
+    
+    #@test 2500 <= sim.glb.N[end] <= 3500 # expected abundance after 2 years
 
+    
     CSV.write("sim_ind.csv", sim.spc)
     CSV.write("sim_glb.csv", sim.glb)
 
@@ -157,6 +153,67 @@ begin
     )
     
     plot(p_glb, p_spc, layout = grid(1,2, widths = norm([2/3, 1])), size = (1000,600)) |> display
+
+    # check expected order of magnitude of population size after 1.5 years of simulation with defaultparams
+    @test 500 < maximum(sim.glb.N) < 1000
 end
 
 savefig("discoglossus_test.png")
+#p.glb.t_max = 300
+#VSCodeServer.@profview_allocs AmphiDEB.IBM_simulator(
+#    p; 
+#    showinfo = 60,  # update every 30 days
+#    saveat = 7, # saving weekly output
+#    dt = 1/24 # daily timestep - better to turn down to hourly for proper results
+#    )
+
+
+@testset "Simulation with density-dependence" begin
+    global p = deepcopy(defaultparams)
+
+    p.glb.t_max = 365. * 3
+    p.glb.dX_in = 5_00.
+    p.glb.k_V = 0.1
+    p.glb.N0 = 100
+
+    p.spc.X_emb_int = truncated(Normal(1, 0.1), 0, Inf)
+    p.spc.Z = truncated(Normal(1, 0.1), 0, Inf)
+    p.spc.tau_R = truncated(Normal(365., 36.5), 0, Inf)
+    p.spc.H_p = 50.
+    p.spc.K_X_lrv = p.spc.K_X_juv = 20.
+    p.spc.h_b = -log(1 - 0.005)
+
+    p.spc.h_S = -log(0.75)
+    p.spc.S_rel_crit = 0.5
+
+    @time global sim = AmphiDEB.IBM_simulator(
+        p; 
+        showinfo = 60, # print update every so many days 
+        saveat = 1, # saving weekly output
+        dt = 1/24, # daily timestep - better to turn down to hourly for proper results
+        record_individuals = false 
+        )
+
+    
+    #@test 2500 <= sim.glb.N[end] <= 3500 # expected abundance after 2 years
+
+    p1 = @df sim.glb plot(
+        :t, :N, 
+        xrotation = 45, 
+        xlabel = "Time [d]", ylabel = "N", title = "Total abundance", 
+        leftmargin = 5mm, bottommargin = 5mm
+        )
+
+    p2 = @df sim.glb plot(
+        :t, [:N_emb :N_lrv :N_mt :N_juv :N_ad], 
+        label = ["Embryos" "Larvae" "Metamorphs" "Juveniles" "Adults"], 
+        xlabel = "Time [d]", ylabel = "N", title = "Abundance per life stage", 
+        leg = :outertopright, xrotation = 45, bottommargin = 5mm
+    )
+    
+    plot(p1, p2, layout = grid(1,2, widths = norm([2/3, 1])), size = (1000,600)) |> display
+end
+
+
+
+

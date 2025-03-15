@@ -23,6 +23,40 @@ Values reported by Pfab et al. (2020) are taken as defaults when available. <br>
 Parameters not reported by Pfab et al. are set to defaults from the DEBkiss book (Jager, 2022). <br>
 Remaining parameters are ingestion rates, maturity thresholds, aging and starvation - these are guessed, sometimes with reference to additional literature.  
 
+
+
+Individual variability can be induced in any parameter by defining it as a distribution.
+By default, we use the zoom factor `Z`, which is here defined as the ratio between maximum structural masses of two organsims.
+For example, setting `Z = Normal(1, 0.1)` is equivalent to saying that there is a 10% variability in maximum structural masses around the population mean.
+Setting `Z = Dirac(1.)` is equivalent to turning off individual variability in this parameter.
+
+In contrast to the remaining parameters, the zoom factor does not directly appear in the model definition, 
+but its value propagates to other parameters. 
+
+These are listed in the meta-parameter `propagate_zoom`:
+
+```Julia
+propagate_zoom = ComponentVector( # parameters affected by zoom factor, and their scaling components
+        dI_max_emb = 1/3, # dI ∝ Z^(1/3)
+        dI_max_lrv = 1/3, 
+        dI_max_juv = 1/3, 
+        X_emb_int = 1., # X_emb ∝ Z 
+        H_j1 = 1., # H ∝ Z
+        H_p = 1., 
+        K_X_lrv = 1/3, # K_X = dI/F_max => K_X ∝ dI ∝ Z^(1/3) (F_max is maximum area-specific searching rate)
+        K_X_juv = 1/3
+    )
+```
+
+The listed values are the exponents which are applied to the zoom factor to correct the parameter.
+For example, the value for `dI_max_emb` is set to 1/3 because maximum structural mass (and therefore the zoom factor) scales with `dI_max_emb^(1/3)`, 
+as can be derived analytically from the model equilibria.
+
+Setting a value inside `propagate_zoom` to 0 is equivalent to de-coupling this parameter from the zoom factor altogether.
+
+Note that it is not possible to dynamically add or remove values to `propagate_zoom` (as is currently the case for any `ComponentVector`).
+
+
 References:
 
 Jager T (2022). DEBkiss. A simple framework for animal energy budgets. Version 3.0. Leanpub: https://leanpub.com/debkiss_book. <br>
@@ -34,6 +68,7 @@ spc = ComponentVector(
     #=
     Metaparameters
     =#
+
 
     Z = Dirac(1.), # zoom factor
     propagate_zoom = ComponentVector( # parameters affected by zoom factor, and their scaling components
@@ -73,19 +108,22 @@ spc = ComponentVector(
     H_p = 55., # maturity at puberty
 
     T_A = 8000., # Arrhenius temperature (K) 
-    T_ref = 293.15, # reference temperature
+    T_ref = 293.15, # reference 
+    b_T = 40., # effect strength of temperature on resource allocation
 
     #=
     TKTD parameters    
     =#
 
-    k_D_z = [0. 0. 0. 0. 0.;], # k_D - value per PMoA (G,M,A,R,H) and stressor (1 row = 1 stressor)
-    b_z = [0. 0. 0. 0. 0.;], # slope parameters
-    e_z = [0. 0. 0. 0. 0.;], # sensitivity parameters (thresholds)
-    k_D_h = [0.;], # k_D - value for GUTS-Sd module (1 row = 1 stressor)
-    e_h = [0.;], # sensitivity parameter (threshold) for GUTS-SD module
-    b_h = [0.;], # slope parameter for GUTS-SD module 
-    c_H = [1.;], # proportionality constant to convert relative response to hazard rate 
+    h_b = 0., # background mortality
+    
+    KD = [0. 0. 0. 0. 0. 0.;], # k_D - value per PMoA (G,M,A,R,H,kap) and stressor (1 row = 1 stressor)
+    B =  [2. 2. 2. 2. 2. 2.;], # slope parameters
+    E =   [1e10 1e10 1e10 1e10 1e10 1e10;], # sensitivity parameters (thresholds)
+    KD_h = [0.;], # k_D - value for GUTS-Sd module (1 row = 1 stressor)
+    E_h = [1e10;], # sensitivity parameter (threshold) for GUTS-SD module
+    B_h = [1.;], # slope parameter for GUTS-SD module 
+    C_h = [1.;], # proportionality constant to convert relative response to hazard rate 
 
     # these are curently only used in an individual-based context, but could find application in the pure-ODE implementation 
     # for example by triggering emptying of the reproduction buffer through callbacks

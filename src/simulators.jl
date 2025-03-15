@@ -15,6 +15,7 @@ function ODE_simulator(
     model = AmphiDEB_ODE!, 
     callbacks = AmphODE_callbacks(), 
     statevars_init = initialize_statevars,
+    gen_ind_params = p -> EcotoxSystems.generate_individual_params(p; pth = p.pth),
     kwargs...
     )
 
@@ -23,31 +24,45 @@ function ODE_simulator(
         model = model,
         statevars_init = statevars_init,
         tstops = [p.glb.pathogen_inoculation_time, p.glb.medium_renewals...],
-        ind_params_init = p -> EcotoxSystems.generate_individual_params(p; pth = p.pth),
-        callbacks = callbacks, 
+        gen_ind_params = gen_ind_params,
+        callbacks = callbacks,
         kwargs...
     )
 end
 
 function IBM_simulator(
+    # parameters
     p::ComponentVector;
+
+    # default global model
+    init_global_statevars = initialize_global_statevars,
+    global_ode! = AmphiDEB_ODE!, #EcotoxSystems.DEBODE_global!,
+    global_rules! = AmphiDEB_global_rules!,
+    
+    # default individual model
+    init_individual_statevars = initialize_individual_statevars,
     individual_ode! = AmphiDEB_individual!, 
     individual_rules! = default_individual_rules!,
-    init_global_statevars = initialize_global_statevars,
-    init_individual_statevars = initialize_individual_statevars,
-    global_rules! = EcotoxSystems.default_global_rules!,
-    global_ode! = AmphiDEB_ODE!, #DEBODE_global_ecotox!, #
+    gen_ind_params = p -> EcotoxSystems.generate_individual_params(p; pth = p.pth),
+
     kwargs...
     )
 
     EcotoxSystems.IBM_simulator(
         p;
-        individual_ode! = individual_ode!,
+
+        # global model
         init_global_statevars = init_global_statevars,
+        global_ode! = global_ode!, 
+        global_rules! = global_rules!,
+        
+        # individual model
+        individual_ode! = individual_ode!,
         init_individual_statevars = init_individual_statevars,
         individual_rules! = individual_rules!,
-        global_ode! = global_ode!, 
-        global_rules! = global_rules!
+        gen_ind_params = gen_ind_params,
+
+        kwargs...
     )
 
 end
