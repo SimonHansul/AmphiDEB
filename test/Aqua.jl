@@ -1,5 +1,5 @@
 using Pkg; Pkg.activate("test")
 using Aqua
-using Revise, EcotoxSystems
+using Revise, AmphiDEB
 
 Aqua.test_all(EcotoxSystems)
