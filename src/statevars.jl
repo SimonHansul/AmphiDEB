@@ -82,12 +82,15 @@ end
 
 initialize_global_statevars(p) = ComponentVector(
     EcotoxSystems.initialize_global_statevars(p);
-    P_Z = 0,
-    N_emb = 0,
-    N_lrv = 0,
-    N_mt = 0,
-    N_juv = 0,
-    N_ad = 0
+    aging_mortality = 0., 
+    starvation_mortality = 0., 
+    GUTS_mortality = 0.,
+    P_Z = 0.,
+    N_emb = 0.,
+    N_lrv = 0.,
+    N_mt = 0.,
+    N_juv = 0.,
+    N_ad = 0.
 )
 
 

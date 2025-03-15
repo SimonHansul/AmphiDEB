@@ -31,12 +31,12 @@ defaultparams.spc.B
 @testset "Toxicity with default DEB parameters" begin 
     global p = deepcopy(defaultparams)
 
-    pmoa_idx = 6
+    pmoa_idx = 1
 
     p.glb.t_max = 60.
     #p.glb.pathogen_inoculation_time = Inf
 
-    p.glb.dX_in = 15.
+    p.glb.dX_in = [15., 15.]
 
     p.spc.H_j1 = 0.2
     p.spc.H_p = 40.
@@ -88,7 +88,7 @@ end
     p.glb.t_max = 60.
     #p.glb.pathogen_inoculation_time = Inf
 
-    p.glb.dX_in = 15.
+    p.glb.dX_in = [15., 15.]
 
     p.spc.H_j1 = 0.2
     p.spc.H_p = 40.
