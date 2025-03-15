@@ -85,7 +85,7 @@ function Pathogen_Infection!(du, u, p, t)::Nothing
 
     # relative response to pathogen 
    
-    @. u.ind.y_jP = 1. # EcotoxSystems.LL2(u.ind.P_S/(Complex(u.ind.S^(2/3)).re), p.ind.e_P, p.ind.b_P) 
+    @. u.ind.y_jP = LL2(u.ind.P_S, p.ind.E_P, p.ind.B_P) 
     u.ind.y_jP[2] /= u.ind.y_jP[2]^2 # converting a monotonically decreasing to increasing response
 
     return nothing

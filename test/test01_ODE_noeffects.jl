@@ -237,7 +237,7 @@ end
 
     @time global sim = AmphiDEB.ODE_simulator(
             p, 
-            model = AmphiDEB.AmphiDEB_ODE_M2!, 
+            model = AmphiDEB.AmphiDEB_ODE_alt!, 
             saveat = 1/24, # we need high-resolution output to verify the solution
             );
 

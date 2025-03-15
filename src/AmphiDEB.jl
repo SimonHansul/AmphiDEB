@@ -14,7 +14,7 @@ using StatsBase
 
 include("default_params.jl") # default parameter sets
 include("derivatives.jl") # derivatives of the default model
-include("derivatives_M2.jl") # derivatives of model variant M2 (E_mt as sub-component of structure) 
+include("derivatives_alt.jl") # derivatives of model variant M2 (E_mt as sub-component of structure) 
 include("statevars.jl") # setting up state variables
 include("individual_rules.jl")
 include("global_rules.jl")
