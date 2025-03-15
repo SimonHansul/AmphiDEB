@@ -1,4 +1,3 @@
-
 using Pkg; Pkg.activate("test")
 
 using Test
@@ -14,9 +13,8 @@ using DataFrames, DataFramesMeta
 using StatsBase
 using EcotoxSystems
 
-    using Revise
+using Revise
 
-@time import AmphiDEB: defaultparams, ODE_simulator, Amphibian_DEB!, AmphiDEB_ODE!
 using AmphiDEB
 norm(x) = x ./ sum(x)
 
@@ -74,7 +72,6 @@ end
 #    dt = 1/24 # daily timestep - better to turn down to hourly for proper results
 #    )
 
-
 @testset "Simulation with density-dependence" begin
     global p = deepcopy(defaultparams)
 
@@ -95,9 +92,9 @@ end
 
     @time global sim = AmphiDEB.IBM_simulator(
         p; 
-        showinfo = 60, # print update every so many days 
-        saveat = 1, # saving weekly output
-        dt = 1/24, # daily timestep - better to turn down to hourly for proper results
+        showinfo = 60, 
+        saveat = 1, 
+        dt = 1/24, 
         record_individuals = false 
         )
 
@@ -120,7 +117,3 @@ end
     
     plot(p1, p2, layout = grid(1,2, widths = norm([2/3, 1])), size = (1000,600)) |> display
 end
-
-
-
-
