@@ -56,7 +56,7 @@ import EcotoxSystems: constrmvec
 
     # check final structural mass
     
-    @test isapprox(S_max_anl, maximum(sim.S), rtol = 1e-2) 
+    @test isapprox(S_max_anl, maximum(sim.S), atol = 5) 
 
     # check that all life stage indicators max out close to 1
     
