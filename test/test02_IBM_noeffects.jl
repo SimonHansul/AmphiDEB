@@ -28,18 +28,63 @@ begin
     norm(x) = x ./ sum(x)
 end
 
+function define_defaultparams()::EcotoxSystems.ComponentVector
+
+    p = EcotoxSystems.ComponentVector(
+    glb = AmphiDEB.defaultparams.glb, 
+    pth = AmphiDEB.defaultparams.pth,
+    spc = EcotoxSystems.ComponentVector(
+        AmphiDEB.defaultparams.spc; 
+        H_j1_prime = 1., 
+        H_p_prime = 1.,
+        watercontent_larvae = 0.93, 
+        watercontent_juveniles = 0.85,
+        time_since_birth = 15. # time since birth at the start of the experiment
+    ))
+
+    # setting global parameters
+
+    p.glb.t_max = 365. 
+    p.glb.pathogen_inoculation_time = Inf
+    #p.glb.dX_in = 1e10 # ad libitum feeding conditions
+
+    p.spc.Z = truncated(Normal(1, 0.17), 0, Inf)
+    # propagation of zoom factor to H_j1 is turned off => we want variability in the transition to metamorphs
+    p.spc.propagate_zoom.H_j1 = 0.
+
+    p.spc.X_emb_int = 1. # ≈ initial dry mass of an egg (mg)
+
+
+    p.spc.dI_max_lrv = 2.17
+    p.spc.eta_AS_emb = 0.77
+    p.spc.gamma = 0.85
+    p.spc.H_j1 = 15.14
+    p.spc.k_J_emb = 0.006
+    p.spc.k_M_emb = 0.094
+    p.spc.kappa_emb = 0.61
+
+
+    p.spc.dI_max_juv = 3.28 
+    p.spc.eta_AS_juv = 0.07
+    p.spc.H_p = 2395.79
+    p.spc.k_J_juv = 0.02
+    p.spc.eta_AR = 0.16
+
+    return p
+end
+
 begin
-    p = deepcopy(defaultparams)
+    p = define_defaultparams() #
 
     p.glb.t_max = 365. * 2
-    p.glb.dX_in = [100., 5000.]
+    p.glb.dX_in = [5., 25.]
     p.glb.k_V = [0., 0.]
     p.glb.N0 = 10
 
-    p.spc.Z = truncated(Normal(1, 0.1), 0, Inf)
+    #p.spc.Z = truncated(Normal(1, 0.1), 0, Inf)
     p.spc.tau_R = 0 #365
     p.spc.h_S = 0.1
-    p.spc.H_p = 40.
+    #p.spc.H_p = 40.
     
     @time sim = AmphiDEB.IBM_simulator(
         p; 
@@ -101,12 +146,12 @@ begin
     p_spc = @df sim.spc plot(
         groupedlineplot(:t, :S, :cohort, ylabel = "S", title = "Structural mass"), 
         #groupedlineplot(:t, [x[1] for x in :f_X], :cohort, ylabel = "f(X) aquatic", title = "Scaled funct. response"), 
-        #groupedlineplot(:t, [x[2] for x in :f_X], :cohort, ylabel = "f(X) terrestrial", title = "Scaled funct. response"), 
+        groupedlineplot(:t, [x[2] for x in :f_X], :cohort, ylabel = "f(X) terrestrial", title = "Scaled funct. response"), 
         groupedlineplot(:t, :cum_repro, :cohort, ylabel = "cR", title = "Cumulative reproduction"),
         groupedlineplot(:t, :A, :cohort, ylabel="A", title="Assimilation"),
         groupedlineplot(:t, :M, :cohort, ylabel="M", title="Maintenance cost"),
         maturity,
-        life_stages,
+        #life_stages,
         xrotation = 45, xlabel = "Time [d]", titlefontsize = 10, 
         bottommargin = 5mm, topmargin = 5mm, leftmargin = 5mm, rightmargin = 5mm
     )
@@ -114,4 +159,4 @@ begin
     plot(p_glb, p_spc, layout = grid(1,2, widths = norm([2/3, 1])), size = (1000,600)) |> display
 end
 
-savefig("5jahre_dXin5000.png")
+savefig("discoglossus_test.png")

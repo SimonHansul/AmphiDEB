@@ -68,3 +68,9 @@ norm(x) = x ./ sum(x)
 #dosis wirkungskurven für einzelne generationen
 #nahrungsverfügbarkeit deutlich erhöhen
 #hintergrundmortalität
+
+
+#11.03.
+#mit mortality länger simulieren (mehrere peaks)
+#neue parameter (discoglossus) länger simulieren
+#nach starvation parametern suchen (suche dokumentieren) 
