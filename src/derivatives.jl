@@ -338,7 +338,7 @@ end
     juvenile::Float64, 
     adult::Float64,
     X::Vector{Float64},
-    V_patch::Vector{Real}, 
+    V_patch::Union{Vector{Float64},Vector{Real}}, # TODO: unclear which type it has to be...julia complains with either one in different cases 
     K_X_lrv::Float64,
     K_X_juv::Float64
     )::Float64

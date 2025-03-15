@@ -31,8 +31,8 @@ export plot_statevars
     sim = @replicates ODE_simulator(p) 10
     
     p.glb.t_max = 365.
-    p.glb.tau_R = 30.
     p.glb.dX_in = [500., 500.]
+    p.spc.tau_R = 30.
     
     sim = IBM_simulator(p)
 end
