@@ -754,9 +754,13 @@ Calculate seasonal fluctuations in temperature from a sinusoidal function.
 
 end
 
-function AmphiDEB_global!(du, u, p, t)::Nothing
+@inline function DEBODE_global_ecotox!(du, u, p, t)::Nothing
+    @. du.glb.X = p.glb.dX_in - p.glb.k_V * u.glb.X  
+    return nothing
+end
 
-    EcotoxSystems.DEBODE_global!(du, u, p, t)
+function AmphiDEB_global!(du, u, p, t)::Nothing
+    DEBODE_global_ecotox!(du, u, p, t)
     #u.ind.T = p.glb.tempfun(t, p.glb.temp...) 
 
     return nothing
@@ -799,7 +803,7 @@ end
 
 function AmphiDEB_ODE!(du, u, p, t)::Nothing
 
-    DEBODE_global_ecotox!(du, u, p, t)
+    AmphiDEB_global!(du, u, p, t)
     #Pathogen_growth!(du, u, p, t)
     AmphiDEB_individual!(du, u, p, t)
 
