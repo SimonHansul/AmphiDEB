@@ -14,20 +14,10 @@ using StatsBase
 using Revise
 
 @time import AmphiDEB: defaultparams, ODE_simulator, Amphibian_DEB!, AmphiDEB_ODE!
-using AmphiDEB
-using EcotoxSystems
-import EcotoxSystems: DEBODE_global!
-
-import EcotoxSystems: sig
-import EcotoxSystems: constrmvec
+using AmphiDEBimport EcotoxSystems: constrmvec
 
 
-global p = deepcopy(EcotoxSystems.defaultparams)
 
-p.spc.KD
-p.spc.KD[:,1] .= 1.
-
-p.spc.KD
 
 
 @testset "Toxicity with default parameters" begin 

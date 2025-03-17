@@ -1,4 +1,5 @@
 using Pkg; Pkg.activate("test")
+
 using Test
 using Distributions
 using OrdinaryDiffEq
@@ -13,60 +14,69 @@ using StatsBase
 
 using Revise
 
-@time import AmphiDEB: defaultparams, ODE_simulator, Amphibian_DEB!, AmphiDEB_ODE!
 using AmphiDEB
 using EcotoxSystems
-import EcotoxSystems: DEBODE_global!
 
-import EcotoxSystems: sig
-import EcotoxSystems: constrmvec
 
-defaultparams.spc.dI_max_juv = 1
-AmphiDEB.calc_S_max_juv(defaultparams.spc)
-
-@testset "Default parameters" begin 
-    global p = deepcopy(defaultparams)
+@testset "Pathogen growth without effects" begin 
+    global p = deepcopy(AmphiDEB.defaultparams)
 
     p.glb.t_max = 60
     p.glb.pathogen_inoculation_time = 20.
+    p.glb.pathogen_inoculation_dose = 1e3
 
-    p.glb.dX_in = 15.
+    p.glb.dX_in = [15., 15.]
 
     p.spc.Z = Dirac(1.)
-    p.spc.E[3] = 1. 
-    p.spc.B[3] = .1
 
-    sim = @replicates ODE_simulator(
-            p, 
-            returntype = EcotoxSystems.dataframe, 
-            alg = Tsit5()
-            ) 10
+    sim = @replicates AmphiDEB.ODE_simulator(p) 10
         
     sim[!,:E_mt_rel] = sim.E_mt ./ (sim.S + sim.E_mt)
     sim[!,:W_tot] = sim.S .+ sim.E_mt 
     
     plt = @df sim plot(
-        plot(:t, :S, group = :replicate),
-        plot(:t, :E_mt, group = :replicate),
+        plot(:t, :S, group = :replicate, ylabel = "S"),
+        plot(:t, :E_mt, group = :replicate, ylabel = "E_mt"),
+        plot(:t, :P_Z, group = :replicate, ylabel = "P_Z"),
+        plot(:t, :P_S, group = :replicate, ylabel = "P_S"),
+        xlabel = "t",
         xrotation = 45
         )
     display(plt)
 
-    #TODO: add proper test conditions
+    # check for final median zoospore and sporangia abundance
 
-    #@test 55 <= maximum(sim.S) <= 60 # check final structural mass
-    #@test ([isapprox(1, sum([r.embryo, r.larva, r.metamorph, r.juvenile, r.adult])) for r in eachrow(sim)] |> unique)==[1] # check that exactly one life stage at a time is "true"
+    @test 500 <= median(sim[end,:P_Z]) <= 2000
+    @test 1 <= median(sim[end,:P_S]) <= 20
 end
 
+@testset "Pathogen growth with effects" begin 
 
+    pmoa_idx = 1
+    global p = deepcopy(AmphiDEB.defaultparams)
 
-sim = exposure(p -> ODE_simulator(
-    p, 
-    returntype = EcotoxSystems.dataframe, 
-    alg = Tsit5()
-    ), 
-    p,
-    [0. 0.5 1. 2.]
-    )
+    p.glb.t_max = 60
+    p.glb.pathogen_inoculation_time = 20.
+    p.glb.pathogen_inoculation_dose = 1e3
 
+    p.glb.dX_in = [15., 15.]
 
+    p.spc.Z = Dirac(1.)
+
+    p.spc.E_P[pmoa_idx] = 5.
+    p.spc.B_P[pmoa_idx] = 2.
+
+    sim = @replicates AmphiDEB.ODE_simulator(p) 10
+        
+    sim[!,:E_mt_rel] = sim.E_mt ./ (sim.S + sim.E_mt)
+    sim[!,:W_tot] = sim.S .+ sim.E_mt 
+    
+    plt = @df sim plot(
+        plot(:t, :S, group = :replicate, ylabel = "S"),
+        plot(:t, :E_mt, group = :replicate, ylabel = "E_mt"),
+        plot(:t, :P_Z, group = :replicate, ylabel = "P_Z"),
+        plot(:t, :P_S, group = :replicate, ylabel = "P_S"),
+        xlabel = "t", xrotation = 45
+        )
+    display(plt)
+end

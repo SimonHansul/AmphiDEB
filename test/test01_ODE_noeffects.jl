@@ -223,7 +223,6 @@ end
     @test unique(isapprox.(1, sum_indicators, atol = 1e-3)) == [true]
 end
 
-
 @testset "Model variant M2" begin
     global p = deepcopy(defaultparams)
 
@@ -238,7 +237,7 @@ end
 
     @time global sim = AmphiDEB.ODE_simulator(
             p, 
-            model = AmphiDEB.AmphiDEB_ODE_M2!, 
+            model = AmphiDEB.AmphiDEB_ODE_alt!, 
             saveat = 1/24, # we need high-resolution output to verify the solution
             );
 

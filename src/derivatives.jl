@@ -85,7 +85,7 @@ function Pathogen_Infection!(du, u, p, t)::Nothing
 
     # relative response to pathogen 
    
-    @. u.ind.y_jP = 1. # EcotoxSystems.LL2(u.ind.P_S/(Complex(u.ind.S^(2/3)).re), p.ind.e_P, p.ind.b_P) 
+    @. u.ind.y_jP = LL2(u.ind.P_S, p.ind.E_P, p.ind.B_P) 
     u.ind.y_jP[2] /= u.ind.y_jP[2]^2 # converting a monotonically decreasing to increasing response
 
     return nothing
@@ -285,6 +285,35 @@ Temperature effects are implemented according to Romoli et al. (2024).
     return 1/(1 + (((1-kappa)/kappa) * exp(-b_T * ((T_ref - T)/T_ref))))*y_K
 end
 
+
+"""
+    life_stage_and_plasticity_effects(du, u, p, t)::Tuple{Float64,Float64}
+
+Handles life-stage specificity of parameters. 
+The parameter notation foresees that the superscript indicates the first life stage for which a value is valid,
+e.g. if we have eta_AS_emb and eta_AS_juv, then eta_AS_emb is applied for eymbros, larvae and metamorphs, and eta_AS_juv is applied for juveniles and adults
+"""
+function life_stage_and_plasticity_effects(du, u, p, t)::Tuple{Float64,Float64}
+
+    eta_AS = calc_eta_AS(u.ind[:embryo], u.ind[:larva], u.ind[:metamorph], p.ind[:eta_AS_emb], u.ind[:juvenile], u.ind[:adult], p.ind[:eta_AS_juv])
+    kappa = calc_kappa(u.ind[:embryo], u.ind[:larva], u.ind[:metamorph], p.ind[:kappa_emb], u.ind[:juvenile], u.ind[:adult], p.ind[:kappa_juv], p.ind[:b_T], p.ind[:T_ref], p.glb[:T], u.ind.y_j[6])
+
+    return eta_AS, kappa
+end
+
+"""
+    y_T(
+        T_A::Float64,
+        T_ref::Float64,
+        T::Float64
+        )::Float64
+
+Calculates temperature correction coefficient `y_T` according to Arrhenius equation.
+
+- `T_A` : Arrhenius temperature (K)
+- `T_ref` : Reference temperature (K)
+- `T` : Current ambient temperature
+"""
 @inline function y_T(
     T_A::Float64,
     T_ref::Float64,
@@ -295,38 +324,20 @@ end
 
 end
 
-"""
-    life_stage_effects(du, u, p, t)::Tuple{Float64,Float64}
-
-Handles life-stage specificity of parameters and effects of temperature on parameters, other than the basic Arrhenius correction. <br> 
-
-The parameter notation foresees that the superscript indicates the first life stage for which a value is valid,
-e.g. if we have eta_AS_emb and eta_AS_juv, then eta_AS_emb is applied for eymbros, larvae and metamorphs, and eta_AS_juv is applied for juveniles and adults
-"""
-function life_stage_and_temperature_effects(du, u, p, t)::Tuple{Float64,Float64}
-
+function Arrhenius!(du, u, p, t)::Nothing
+    
     u.ind.y_T = y_T(p.ind[:T_A], p.ind[:T_ref], p.glb[:T])
+
+end
+
+
+function  life_stage_and_plasticity_effects!(du, u, p, t)::Tuple{Float64,Float64}
+    
     eta_AS = calc_eta_AS(u.ind[:embryo], u.ind[:larva], u.ind[:metamorph], p.ind[:eta_AS_emb], u.ind[:juvenile], u.ind[:adult], p.ind[:eta_AS_juv])
     kappa = calc_kappa(u.ind[:embryo], u.ind[:larva], u.ind[:metamorph], p.ind[:kappa_emb], u.ind[:juvenile], u.ind[:adult], p.ind[:kappa_juv], p.ind[:b_T], p.ind[:T_ref], p.glb[:T], u.ind.y_j[6])
 
     return eta_AS, kappa
 end
-
-
-
-# not needed anymore with new f_X method?
-#@inline function determine_K_X(
-#    larva::Float64,
-#    metamorph::Float64,
-#    K_X_lrv::Float64, 
-#    juvenile::Float64, 
-#    adult::Float64, 
-#    K_X_juv::Float64
-#    )::Float64
-#    
-#    return ((larva + metamorph) * K_X_lrv) + ((juvenile + adult) * K_X_juv)
-#
-#end
 
 @inline function f_X(
     X::Float64,
@@ -345,7 +356,7 @@ end
     juvenile::Float64, 
     adult::Float64,
     X::Vector{Float64},
-    V_patch::Vector{Real}, 
+    V_patch::Union{Vector{Real},Vector{Float64}}, 
     K_X_lrv::Float64,
     K_X_juv::Float64
     )::Float64
@@ -363,6 +374,7 @@ end
     )::Float64
 
     return embryo * (Complex(S)^(2/3)).re * dI_max_emb * y_T
+    
 end
 
 @inline function calc_dI_mt(
@@ -572,8 +584,8 @@ end
     y_GP::Float64
     )::Float64
 
-    if (kappa * dA)>dM
-        return  eta_AS * y_G * y_GP * (1 - gamma) * (kappa * dA - dM)
+    if (kappa * dA) > dM
+        return eta_AS * y_G * y_GP * (1 - gamma) * (kappa * dA - dM)
     else
         return -(dM / eta_SA - (1 - gamma) * kappa * dA)
     end
@@ -780,7 +792,8 @@ During metamorphosis, ingestion rate decreases gradually and reaches 0 at the en
 function Amphibian_DEB!(du, u, p, t)::Nothing
 
     determine_life_stage!(du, u, p, t)
-    eta_AS, kappa = life_stage_and_temperature_effects(du, u, p, t)
+    Arrhenius!(du, u, p, t)
+    eta_AS, kappa = life_stage_and_plasticity_effects(du, u, p, t)
 
     ingestion!(du, u, p, t)
     maintenance!(du, u, p, t)
@@ -806,7 +819,7 @@ end
 function AmphiDEB_ODE!(du, u, p, t)::Nothing
 
     AmphiDEB_global!(du, u, p, t)
-    #Pathogen_growth!(du, u, p, t)
+    Pathogen_growth!(du, u, p, t)
     AmphiDEB_individual!(du, u, p, t)
 
     return nothing
