@@ -29,7 +29,7 @@ end
 
 end
 
-@inline function death_by_chemcial(
+@inline function death_by_GUTS(
     h::Float64, 
     dt::Float64
     )::Bool
@@ -60,6 +60,7 @@ function default_individual_rules!(
     # death due to aging
     if death_by_aging(ind[:age], p.ind[:a_max])
         ind.cause_of_death = 1.
+        glb.aging_mortality += 1
     end
 
     # life-stage transitions are part of ODE in amphibian model and omitted here
@@ -70,11 +71,13 @@ function default_individual_rules!(
 
     if death_by_loss_of_structure(ind[:S], ind[:S_max_hist], p[:ind][:S_rel_crit], p.ind[:h_S], m.dt)
         ind.cause_of_death = 2.
+        glb.starvation_mortality += 1
     end
 
-    # includes background mortality
-    if death_by_chemcial(ind[:h_z], m.dt)
+    # mortality caused by GUTS submodule, including background mortality
+    if death_by_GUTS(ind[:h_z], m.dt)
         ind.cause_of_death = 3.
+        glb.GUTS_mortality += 1
     end
 
     # reproduction, assuming a constant reproduction period

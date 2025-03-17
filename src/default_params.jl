@@ -131,15 +131,15 @@ spc = ComponentVector(
     S_rel_crit = 0.66, # initial guess on how much body mass can be lost - X. laevis can lose up to 45% of mass, but accompanied with considerable starvation mortality (Merkle & Hanke (1987) Comp. Biochem. Physiol.)
     h_S = 0.6, # hazard rate below critical mass - ca. 50% daily survival probability ()
     a_max = truncated(Normal(15 * 365, 1.5 * 365), 0, Inf), # maximum age [d]
-    tau_R = 365, # reproduction period [d]
+    tau_R = 365., # reproduction period [d]
     
     #=
     Pathogen dynamics and effect parameters
     =#
 
     Chi = LogNormal(log(1)+1^2, 1), # killing rate modifier, log-normal distribution with mode 1 and sigma 1, (mu = ln(mode)+sigma^2).
-    e_P = [Inf, Inf, Inf, Inf], # sensitivity parameter (threshold) for GUTS-SD module
-    b_P = [2., 2., 2., 2.], # slope parameter for GUTS-SD module 
+    E_P = [Inf, Inf, Inf, Inf], # sensitivity parameter (threshold) for GUTS-SD module
+    B_P = [2., 2., 2., 2.], # slope parameter for GUTS-SD module 
 )
 
 # defaults for pathogen model are averages from the value ranges reported by Drawert et al. (2018)

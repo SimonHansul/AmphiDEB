@@ -3,6 +3,8 @@
 
 [![CI](https://github.com/SimonHansul/AmphiDEB.jl/actions/workflows/CI.yml/badge.svg)](https://github.com/SimonHansul/AmphiDEB.jl/actions/workflows/CI.yml)
 [![codecov](https://codecov.io/gh/SimonHansul/AmphiDEB.jl/graph/badge.svg?token=BL1CFR86M6)](https://codecov.io/gh/SimonHansul/AmphiDEB.jl)
+[![Aqua QA](https://raw.githubusercontent.com/JuliaTesting/Aqua.jl/master/badge.svg)](https://github.com/JuliaTesting/Aqua.jl)
+
 
 ## TKTD interface
 
@@ -65,3 +67,12 @@ The PMoAs have a fixed order in the parameter matrices:
 **Non-breaking changes**
 
 - Optimized model implementation.
+
+### v0.2.1
+
+- Added unit tests for temperature and pathogen effects
+- Simplified pathogen effects by assuming response to pathogen to depend on `P_S` only, instead of `P_S/(S^(2/3))`. The latter kept causeing numerical instabilities with solvers other than Euler. TBD.
+
+### v0.2.2
+
+- Technical bugfixes, resolved merge conflices caused during previous update
