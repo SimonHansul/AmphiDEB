@@ -72,3 +72,7 @@ The PMoAs have a fixed order in the parameter matrices:
 
 - Added unit tests for temperature and pathogen effects
 - Simplified pathogen effects by assuming response to pathogen to depend on `P_S` only, instead of `P_S/(S^(2/3))`. The latter kept causeing numerical instabilities with solvers other than Euler. TBD.
+
+### v0.2.2
+
+- Technical bugfixes, resolved merge conflices caused during previous update

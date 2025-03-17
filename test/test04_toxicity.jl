@@ -14,10 +14,8 @@ using StatsBase
 using Revise
 
 @time import AmphiDEB: defaultparams, ODE_simulator, Amphibian_DEB!, AmphiDEB_ODE!
-using AmphiDEBimport EcotoxSystems: constrmvec
-
-
-
+using AmphiDEB
+import EcotoxSystems: constrmvec
 
 
 @testset "Toxicity with default parameters" begin 

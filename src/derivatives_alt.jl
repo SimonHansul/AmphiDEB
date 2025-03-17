@@ -1,5 +1,7 @@
 # derivatives_alt.jl
 # derivatives for an alternative model version where E_mt is viewed as a sub-compartment of structure
+# the main difference is is that E_mt then also contributes to somatic maintenance
+
 """
     ingestion!(du, u, p, t)::Nothing
 
@@ -140,13 +142,13 @@ This leads to the following main differences:
 function Amphibian_DEB_alt!(du, u, p, t)::Nothing
 
     determine_life_stage!(du, u, p, t)
-    eta_AS, kappa = life_stage_and_temperature_effects(du, u, p, t)
+    eta_AS, kappa = life_stage_and_plasticity_effects!(du, u, p, t)
 
-    ingestion_M2!(du, u, p, t)
-    maintenance_M2!(du.ind, u.ind, p.ind, t)
-    growth_M2!(du.ind, u.ind, p.ind, t, eta_AS, kappa)
+    ingestion_alt!(du, u, p, t)
+    maintenance_alt!(du.ind, u.ind, p.ind, t)
+    growth_alt!(du.ind, u.ind, p.ind, t, eta_AS, kappa)
     maturation!(du, u, p, t, kappa)
-    metamorphic_reserve_M2!(du.ind, u.ind, p.ind, t, eta_AS, kappa)
+    metamorphic_reserve_alt!(du.ind, u.ind, p.ind, t, eta_AS, kappa)
 
     reproduction!(du, u, p, t, kappa)
 

@@ -328,6 +328,8 @@ function Arrhenius!(du, u, p, t)::Nothing
     
     u.ind.y_T = y_T(p.ind[:T_A], p.ind[:T_ref], p.glb[:T])
 
+    return nothing
+
 end
 
 

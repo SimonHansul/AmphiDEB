@@ -1,4 +1,4 @@
-using Pkg; Pkg.activate("test/")
+using Pkg; Pkg.activate("test")
 
 using EcotoxSystems
 using Plots, StatsPlots
@@ -6,9 +6,6 @@ using Test
 
 using Revise
 using AmphiDEB
-
-p = deepcopy(AmphiDEB.defaultparams)
-
 
  
 @testset "Reserve dynamics under starvation" begin
@@ -27,7 +24,7 @@ p = deepcopy(AmphiDEB.defaultparams)
         plot(:t, vcat(0, diff(:I)), label = ""), 
         xlabel = "t", ylabel = ["W" "dI" "dM"], 
         layout = (1,3), size = (1000,350)
-    )
+    ) |> display
 
     # without additional starvation rules, 
     # change in reserve should go to 0. no endless reserve accumulation as individuals stop growing

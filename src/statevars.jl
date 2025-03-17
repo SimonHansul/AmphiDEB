@@ -80,18 +80,20 @@ function initialize_individual_statevars(
 end
 
 
-initialize_global_statevars(p) = ComponentVector(
-    EcotoxSystems.initialize_global_statevars(p);
-    aging_mortality = 0,
-    starvation_mortality = 0,
-    GUTS_mortality = 0,
-    P_Z = 0,
-    N_emb = 0,
-    N_lrv = 0,
-    N_mt = 0,
-    N_juv = 0,
-    N_ad = 0
-)
+function initialize_global_statevars(p)
+    return ComponentVector(
+        EcotoxSystems.initialize_global_statevars(p);
+        aging_mortality = 0,
+        starvation_mortality = 0,
+        GUTS_mortality = 0,
+        P_Z = 0,
+        N_emb = 0,
+        N_lrv = 0,
+        N_mt = 0,
+        N_juv = 0,
+        N_ad = 0
+    )
+end
 
 
 function initialize_statevars(p::ComponentVector)
