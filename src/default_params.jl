@@ -131,7 +131,7 @@ spc = ComponentVector(
     S_rel_crit = 0.66, # initial guess on how much body mass can be lost - X. laevis can lose up to 45% of mass, but accompanied with considerable starvation mortality (Merkle & Hanke (1987) Comp. Biochem. Physiol.)
     h_S = 0.6, # hazard rate below critical mass - ca. 50% daily survival probability ()
     a_max = truncated(Normal(15 * 365, 1.5 * 365), 0, Inf), # maximum age [d]
-    tau_R = 365, # reproduction period [d]
+    tau_R = 365., # reproduction period [d]
     
     #=
     Pathogen dynamics and effect parameters
