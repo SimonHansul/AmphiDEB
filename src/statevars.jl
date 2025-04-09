@@ -47,9 +47,8 @@ function initialize_individual_statevars(
         D_h = EcotoxSystems.constrmvec(p.ind.KD_h), # lethal damage per stressor
 
         y_T = 1.,
-
-        y_z = EcotoxSystems.constrmmat(p.ind.KD), # relative response per stressor and pmoa
-        y_j = Float64[1. 1. 1. 1. 1. 1.],
+        
+        y_j = Float64[1. 1. 1. 1. 1. 1.],  # relative response per stressor and pmoa
         h_z = 0., # hazard rate caused by chemical stressors
         S_z = 1., # chemical-related survival probability
 
