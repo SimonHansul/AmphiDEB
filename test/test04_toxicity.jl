@@ -11,11 +11,13 @@ include("testutils.jl")
 using DataFrames, DataFramesMeta
 using StatsBase
 
+using EcotoxSystems
+import EcotoxSystems: constrmvec
+
 using Revise
 
-@time import AmphiDEB: defaultparams, ODE_simulator, Amphibian_DEB!, AmphiDEB_ODE!
 using AmphiDEB
-import EcotoxSystems: constrmvec
+@time import AmphiDEB: defaultparams, ODE_simulator, Amphibian_DEB!, AmphiDEB_ODE!
 
 
 @testset "Toxicity with default parameters" begin 
@@ -40,7 +42,7 @@ import EcotoxSystems: constrmvec
         # check that the syntax for parameter assignment works 
         @test sum(p.spc.KD .> 0) == 1
 
-        @time global sim = exposure(
+        @time global sim = EcotoxSystems.exposure(
             ODE_simulator, 
             p,
             Matrix(hcat([0.; 1.; 2.;]...)')
@@ -56,10 +58,12 @@ import EcotoxSystems: constrmvec
             plot(:t, :y_j_1_2, group = :C_W_1),
             plot(:t, :y_j_1_3, group = :C_W_1),
             plot(:t, :y_j_1_4, group = :C_W_1),
+            plot(:t, :y_j_1_5, group = :C_W_1),
+            plot(:t, :y_j_1_6, group = :C_W_1),
             plot(:t, :R, group = :C_W_1),
             plot(:t, :H, group = :C_W_1),
             xrotation = 45, 
-            xlabel = "t", ylabel = ["S" "E_mt" "y_G" "y_M" "y_A" "y_R" "R" "H"], 
+            xlabel = "t", ylabel = ["S" "E_mt" "y_G" "y_M" "y_A" "y_R" "y_H" "y_κ" "R" "H"], 
             leg = [:topleft false false false false], legendtitle = "C_W", 
             size = (1000,600), bottommargin = 5mm, leftmargin = 5mm
             )
