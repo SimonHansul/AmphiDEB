@@ -43,7 +43,9 @@ end
 end
 
 @inline function calc_num_offspring(R::Float64, X_emb_int::Float64)::Int64
+
     return trunc(R / X_emb_int)
+    
 end
 
 function default_individual_rules!(

@@ -169,6 +169,43 @@ end
 
 end
 
+
+@testset "Effect of gamma on equilibrium reserve density" begin
+
+
+    plt = plot(layout = (2,2), leg = true, size = (800,750), xlabel = ["t" "t" "t_scaled"], ylabel = ["W" "[E_mt]" "W_scaled"])
+    plot!(plt, subplot = 4, xaxis = false, yaxis = false, grid = false, xlabel = "", ylabel = "")
+    
+    p.glb.t_max = 365*10
+    p.glb.pathogen_inoculation_time = Inf
+    p.glb.dX_in = [20., 20.]
+    p.spc.H_j1 = Inf
+    p.spc.H_p = Inf
+
+    gamma_values = [0.1, 0.25, 0.5, 0.75, 0.9]
+
+    sims_lrv = DataFrame()
+
+    for gamma in gamma_values
+        
+        p.spc.gamma = gamma
+        sim = AmphiDEB.ODE_simulator(
+            p
+            );
+        
+        sim_lrv = @subset(sim, isapprox.(1, :larva, atol = 0.1))
+        sim_lrv[!,:gamma] .= gamma
+        append!(sims_lrv, sim_lrv)
+
+        @df sim plot!(plt, :t, :S .+ :E_mt, label = gamma, subplot = 1)
+        @df sim plot!(plt, :t, :E_mt ./ (:S .+ :E_mt), label = gamma, subplot = 2)
+
+    end
+
+    display(plt)
+
+end
+
 @testset "Randomized parameters" begin
     
     global p = deepcopy(defaultparams)
@@ -300,3 +337,7 @@ end
     @test 0.9 < reldiff_kJ < 1.1
 
 end
+
+AmphiDEB.ODE_simulator(AmphiDEB.defaultparams, alg = OrdinaryDiffEq.Rodas5P())
+
+@benchmark AmphiDEB.ODE_simulator(AmphiDEB.defaultparams)
