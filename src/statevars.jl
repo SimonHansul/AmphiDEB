@@ -34,6 +34,8 @@ function initialize_individual_statevars(
 
         X_emb = p.ind.X_emb_int, # initial mass of vitellus
         S = p.ind.X_emb_int * X_EMB_INT_REL, # initial structure is a small fraction of initial reserve // mass of vitellus
+        L_S = (p.ind.X_emb_int * X_EMB_INT_REL)^(1/3), # proportional structural length
+        L_S_max = calc_S_max_lrv(p.ind)^(1/3), # proportional maximum structural length
         H = 0., # maturity
         R = 0., # reproduction buffer
         f_X = 1., # scaled functional response 

@@ -1,5 +1,13 @@
 
 """
+    calc_S_max_lrv(spc::ComponentVector)
+
+Calculates maximum structural mass of larvae from parameters.. 
+"""
+calc_S_max_lrv(spc::ComponentVector) = ((spc.kappa_emb * spc.dI_max_lrv * spc.eta_IA) / spc.k_M_emb)^3
+
+
+"""
     calc_S_max_juv(spc::ComponentVector)
 
 Calculates maximum structural mass of juveniles and adults from parameters. 

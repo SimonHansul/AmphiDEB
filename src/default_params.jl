@@ -115,6 +115,8 @@ spc = ComponentVector(
     TKTD parameters    
     =#
 
+    TK_feedbacks = [0., 0., 0., 0.],
+    K_R = 1.,
     h_b = 0., # background mortality
     
     KD = [0. 0. 0. 0. 0. 0.;], # k_D - value per PMoA (G,M,A,R,H,kap) and stressor (1 row = 1 stressor)

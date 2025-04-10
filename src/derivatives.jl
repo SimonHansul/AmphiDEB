@@ -12,7 +12,7 @@ Derivative of the zoospore abundance `P_Z`.
 This function does not take changes in zoopsore abundance due to infection into account. 
 This is handled in `Pathogen_Infection!`.
 
-args: 
+## Arguments
 
 - `mu`: Zoospore background mortality rate
 - `P`_Z`: Current zoospore abundance in the environment
@@ -133,6 +133,89 @@ end
     return (1-embryo) * k_D * (C_W - D)
 end
 
+"""
+    function TK_with_feedbacks(
+        embryo::Float64,
+        k_D::Float64,
+        C_W::Float64,
+        D::Float64,
+        dS::Float64,
+        S::Float64,
+        L_S::Float64,
+        L_S_max::,
+        f_u::Float64,
+        f_e::Float64,
+        f_G::Float64,
+        f_R::Float64,
+        K_RV::Float64,
+        X_emb_int::Float64
+        )::Float64
+
+Scaled damage derivative for toxicokinetic model with optional feedbacks. 
+
+This TK model formulation generally follows Jager (2020). 
+A notable difference to the parameterization in the publication is that we assume the egg dry mass `X_emb_int` to be constant over time, 
+rather than assuming the egg dry mass relative to the mother's structural mass to be constant over time (parameter `F_BV` in Jager (2020)). <br><br>
+
+Structural length is expressed as cubic root of structural mass and thus takes the dimension `m^(1/3)`. <br>
+Compared to using structural length with dimension `L`, This has no consequence for the model dynamics, since we only need relative changes and ratios to model feedbacks with body size. <br>
+
+**Please note:** In the current implementation, is it possible for mother individuals to loose damage through reproduction, 
+but it is not possible for embryos to take inherit damage from the mother. 
+When the model is applied to the IBM simulator, it is thus possible to (wrongfully) configure a scenario where the stressor can disappear from the system, 
+without a plausible mechansim explaining that disappearance.<br> 
+Therefore, `f_R` should currently **always** be set to **0 if the model is ever applied to the IBM simulator**. <br>
+`f_R` can be engaged if, and only if, the model application is limited to the simulation of the mother individual.   
+
+## Arguments
+
+- `embryo`: Indicator of whether current life stage is embryo.
+- `k_D`: Dominant rate constant.
+- `C_W`: Exposure concentration.
+- `D`: Scaled damage.
+- `dS`: Change in structural mass.
+- `S`: Structural mass.
+- `L_S`: Proportional structural length, expressed as cubic root of structural mass.
+- `L_S_max`: Proportional maximum structural length, expressed as cubic root of maximum structural mass. 
+- `f_u`: Toggles whether surface area/volume scaling of toxicant uptake should be simulated.
+- `f_u`: Toggles whether surface area/volume scaling of toxicant elimination should be simulated.
+- `f_G`: Toggles whether dilution by growth should be simulated.
+- `f_R`: Toggles whether dilution by reproduction should be simulated. 
+- `K_R`: Partitioning coefficient from structural mass to eggs.
+- `X_emb_int`: Egg dry mass.
+
+## References 
+
+Jager, T. (2020). Revisiting simplified DEBtox models for analysing ecotoxicity data. Ecological Modelling, 416, 108904.
+
+"""
+@inline function TK_with_feedbacks(
+    embryo::Float64,
+    k_D::Float64,
+    C_W::Float64,
+    D::Float64,
+    dS::Float64,
+    S::Float64,
+    L_S::Float64,
+    L_S_max::Float64,
+    dR::Float64,
+    X_emb_int::Float64,
+    K_R::Float64,
+    f_u::Float64,
+    f_e::Float64,
+    f_G::Float64,
+    f_R::Float64,
+    )::Float64
+
+    x_u = f_u * L_S_max/L_S
+    x_e = f_e * L_S_max/L_S
+    x_G = f_G * dS/S
+    x_R = f_R * dR*(X_emb_int/S)*K_R
+
+    return embryo * (k_D*(x_u * C_W - x_e * D) - (x_G + x_R) * D)
+
+end
+
 # mixture TKTD based on independent action model
 @inline function TKTD_mix_IA!(du, u, p, t)::Nothing
 
@@ -144,12 +227,38 @@ end
     for z in eachindex(glb.C_W) # for every chemical
         for j in eachindex(ind.y_j) # for every PMoA
             # calculate change in damage
-            du.ind.D_j[z,j] = minimal_TK(ind.embryo, p.ind.KD[z,j], glb.C_W[z], ind.D_j[z,j]) 
+            du.ind.D_j[z,j] = TK_with_feedbacks(
+                ind.embryo, 
+                p.ind.KD[z,j], 
+                glb.C_W[z], 
+                ind.D_j[z,j],
+                du.ind[:S],
+                ind[:S],
+                ind[:L_S],
+                ind[:L_S_max],
+                du.ind[:R],
+                p.ind[:X_emb_int],
+                p.ind[:K_R],
+                p.ind[:TK_feedbacks]...
+                ) 
             # update relative response with respect to PMoA j
             ind.y_j[j] *= LL2(ind.D_j[z,j], p.ind.E[z,j], p.ind.B[z,j])
         end
         # calculate change in damage for lethal effects
-        du.ind.D_h[z] = minimal_TK(ind[:embryo], p.ind[:KD_h][z], glb[:C_W][z], ind[:D_h][z]) 
+        du.ind.D_h[z] = TK_with_feedbacks(
+            ind[:embryo], 
+            p.ind[:KD_h][z], 
+            glb[:C_W][z], 
+            ind[:D_h][z],
+            du.ind[:S],
+            ind[:S],
+            ind[:L_S],
+            ind[:L_S_max],
+            du.ind[:R],
+            p.ind[:X_emb_int],
+            p.ind[:K_R],
+            p.ind[:TK_feedbacks]...
+            )  
         # update hazard rate
         ind.h_z += LL2GUTS(ind.D_h[z], p.ind.E_h[z], p.ind.B_h[z])
     end
@@ -247,7 +356,6 @@ end
 
 end
 
-
 """
     calc_kappa(
         embryo::Float64,
@@ -332,11 +440,49 @@ function Arrhenius!(du, u, p, t)::Nothing
 
 end
 
+function calc_L_S_max(
 
-function  life_stage_and_plasticity_effects!(du, u, p, t)::Tuple{Float64,Float64}
+    embryo::Float64, 
+    larva::Float64, 
+    metamorph::Float64, 
+    kappa_emb::Float64, 
+    dI_max_lrv::Float64, 
+    eta_IA::Float64, 
+
+    juvenile::Float64, 
+    adult::Float64, 
+    kappa_juv::Float64, 
+    dI_max_juv::Float64,
+    k_M_juv::Float64
+
+    )::Float64
+
+    L_S_max_lrv = (embryo+larva+metamorph) * (kappa_emb * dI_max_lrv * eta_IA)/k_M_emb
+    L_S_max_ad = (juvenile+adult) * (kappa_juv * dI_max_juv * eta_IA)/k_M_juv
+
+    return L_S_max_lrv + L_S_max_ad
+
+end
+
+function life_stage_and_plasticity_effects!(du, u, p, t)::Tuple{Float64,Float64}
     
     eta_AS = calc_eta_AS(u.ind[:embryo], u.ind[:larva], u.ind[:metamorph], p.ind[:eta_AS_emb], u.ind[:juvenile], u.ind[:adult], p.ind[:eta_AS_juv])
     kappa = calc_kappa(u.ind[:embryo], u.ind[:larva], u.ind[:metamorph], p.ind[:kappa_emb], u.ind[:juvenile], u.ind[:adult], p.ind[:kappa_juv], p.ind[:b_T], p.ind[:T_ref], p.glb[:T], u.ind.y_j[6])
+
+    u.ind.L_S_max = calc_L_S_max(
+        u.ind[:embryo],
+        u.ind[:larva],
+        u.ind[:metamorph],
+        p.ind[:kappa_emb],
+        p.ind[:dI_max_lrv],
+        p.ind[:eta_IA], 
+
+        u.ind[:juvenile],
+        u.ind[:adult],
+        p.ind[:kappa_juv],
+        p.ind[:dI_max_juv],
+        p.ind[:k_M_juv]
+    )
 
     return eta_AS, kappa
 end
@@ -362,7 +508,6 @@ end
     K_X_lrv::Float64,
     K_X_juv::Float64
     )::Float64
-
 
     return ((larva + metamorph) * f_X(X[1], V_patch[1], K_X_lrv)) + ((juvenile + adult) * f_X(X[2], V_patch[2], K_X_juv))
 
@@ -783,6 +928,14 @@ function AmphiDEB_global!(du, u, p, t)::Nothing
     return nothing
 end
 
+function proportional_structural_length!(du, u, p, t)::Nothing
+
+    u.ind.S = calc_L_S(u.ind[:S])
+
+    return nothing
+
+end
+
 
 """ 
     Amphibian_DEB!(du, u, p, t)::Nothing
@@ -796,6 +949,7 @@ function Amphibian_DEB!(du, u, p, t)::Nothing
     determine_life_stage!(du, u, p, t)
     Arrhenius!(du, u, p, t)
     eta_AS, kappa = life_stage_and_plasticity_effects(du, u, p, t)
+    proportional_structural_length!(du, u, p, t)
 
     ingestion!(du, u, p, t)
     maintenance!(du, u, p, t)
