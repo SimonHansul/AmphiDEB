@@ -81,3 +81,4 @@ The PMoAs have a fixed order in the parameter matrices:
 ### v 0.2.3 
 
 - Default increasing log-logistic response is changed from $1/LL2(x,p)$ to $1-log(LL2(x, p))$. Results in more plausible y-values for common value of slope $b$, if the same priors are used for all PMoAs.
+- Type of drc model used for sublethal effects can be changed through paramter `p.spc.drcmodel_sublethal` (1 = log-logistic, 2  = linear with threshold). 

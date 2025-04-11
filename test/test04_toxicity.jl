@@ -30,7 +30,6 @@ using AmphiDEB
         #p.glb.pathogen_inoculation_time = Inf
 
         p.glb.dX_in = [15. 15.]
-
         p.spc.H_j1 = 0.2
         p.spc.H_p = 40.
 
@@ -67,13 +66,13 @@ using AmphiDEB
             leg = [:topleft false false false false], legendtitle = "C_W", 
             size = (1000,600), bottommargin = 5mm, leftmargin = 5mm
             )
-        display(plt)
 
+        display(plt)
 
         # y-column for currently engaged PMoA 
         c = Symbol("y_j_1_$(pmoa_idx)")
 
-        # for every PMoA, verify that we have the effects where we need them
+        # for every PMoA, verify that the relative responses are calculated correctly
         for idx in 1:6
             # get the associated y-column
             c_idx = Symbol("y_j_1_$(pmoa_idx)")
@@ -88,7 +87,7 @@ using AmphiDEB
                 if pmoa_idx != 2
                     @test isapprox(0.5, minimum(sim[:,c]), atol = 0.01)
                 else
-                    @test isapprox(2.0, maximum(sim[:,c]), atol = 0.01)
+                    @test isapprox(1.69, maximum(sim[:,c]), atol = 0.01)
                 end
             end
         end
@@ -101,55 +100,3 @@ using AmphiDEB
     end
 end
 
-
-
-
-#= 
-code to check an individual PMoA by setting pmoa_idx.
-this is not part of the tests. can be useful for debugging.
-
-@testset "PMoA kappa" begin 
-    global p = deepcopy(defaultparams)
-<
-    pmoa_idx = 6
-
-    p.glb.t_max = 60.
-    #p.glb.pathogen_inoculation_time = Inf
-
-    p.glb.dX_in = [15., 15.]
-
-    p.spc.H_j1 = 0.2
-    p.spc.H_p = 40.
-
-    p.spc.KD[pmoa_idx] = 1.
-    p.spc.E[pmoa_idx] = 2. 
-    p.spc.B[pmoa_idx] = 2.
-
-    global sim = exposure(p -> ODE_simulator(
-            p, 
-            returntype = EcotoxSystems.dataframe, 
-            alg = Tsit5()
-            ), 
-            p,
-            Matrix(hcat([0.; 1.; 2.; 4.;]...)')
-            )
-        
-    sim[!,:E_mt_rel] = sim.E_mt ./ (sim.S + sim.E_mt)
-    sim[!,:W_tot] = sim.S .+ sim.E_mt 
-    
-    plt = @df sim plot(
-        plot(:t, :S, group = :C_W_1),
-        plot(:t, :E_mt, group = :C_W_1),
-        plot(:t, :y_j_1_3, group = :C_W_1),
-        plot(:t, :R, group = :C_W_1),
-        plot(:t, :H, group = :C_W_1),
-        xrotation = 45, 
-        xlabel = "t", ylabel = ["S" "E_mt" "y_A" "R" "H"], 
-        leg = [:topleft false false false false], legendtitle = "C_W", 
-        size = (1000,600), bottommargin = 5mm, leftmargin = 5mm
-        )
-    display(plt)
-
- 
-end
-=#

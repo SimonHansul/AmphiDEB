@@ -121,8 +121,26 @@ end
     return (1 / (1 + Complex(x / p[1]) ^ p[2])).re
 end
 
+@inline function LL2pos(x::Float64, p::NTuple{2,Float64})::Float64
+    return 1 - log((1 / (1 + Complex(x / p[1]) ^ p[2])).re)
+end
+
+@inline function NEC2pos(x::Float64, p::NTuple{2,Float64})::Float64
+    return 1 + (p[2] * max(0, x - p[1]))
+end
+
+@inline function NEC2neg(x::Float64, p::NTuple{2,Float64})::Float64
+    return min(1, 1 - (p[2] * max(0, x - p[1])))
+end
+
 @inline LL2(x::Float64, p1::Float64, p2::Float64)::Float64 = LL2(x, (p1, p2))
+@inline LL2pos(x::Float64, p1::Float64, p2::Float64)::Float64 = LL2pos(x, (p1, p2))
 @inline LL2GUTS(x::Float64, p1::Float64, p2::Float64)::Float64 = -log(LL2(x, (p1, p2)))
+
+
+@inline NEC2neg(x::Float64, p1::Float64, p2::Float64)::Float64 = NEC2neg(x, (p1, p2))
+@inline NEC2pos(x::Float64, p1::Float64, p2::Float64)::Float64 = NEC2pos(x, (p1, p2))
+
 
 @inline function minimal_TK(
     embryo::Float64,
@@ -130,8 +148,29 @@ end
     C_W::Float64,
     D::Float64
     )::Float64
+
     return (1-embryo) * k_D * (C_W - D)
+
 end
+
+"""
+    const drcfuncts_sublethal = (
+        (LL2, LL2pos, LL2, LL2, LL2, LL2),
+        (NEC2neg, NEC2pos, NEC2neg, NEC2neg, NEC2neg)
+    )
+
+Collection of alternative dose-response functions for sublethal effects. <br> 
+Which set of functions to use is determined by the species-specific parameter `drcmodel_sublethal`. 
+Setting `drcmodel_sublethal=1` results in the first set of functions being used, i.e. a log-logistic model. 
+Setting `drcmodel_sublethal=2` results in the second set of functions being used, i.e. a linear model with threshold. 
+
+The different functions in each set apply to the different PMoAs, i.e. G, M, A, R, H (decrease in maturity threshold for metamorphosis), κ (increase in allocation to maturation).
+"""
+const drcfuncts_sublethal = (
+    (LL2, LL2pos, LL2, LL2, LL2, LL2),
+    (NEC2neg, NEC2pos, NEC2neg, NEC2neg, NEC2neg, NEC2neg)
+)
+
 
 # mixture TKTD based on independent action model
 @inline function TKTD_mix_IA!(du, u, p, t)::Nothing
@@ -146,7 +185,7 @@ end
             # calculate change in damage
             du.ind.D_j[z,j] = minimal_TK(ind.embryo, p.ind.KD[z,j], glb.C_W[z], ind.D_j[z,j]) 
             # update relative response with respect to PMoA j
-            ind.y_j[j] *= LL2(ind.D_j[z,j], p.ind.E[z,j], p.ind.B[z,j])
+            ind.y_j[j] *= drcfuncts_sublethal[p.ind.drcmodel_sublethal][j](ind.D_j[z,j], p.ind.E[z,j], p.ind.B[z,j])
         end
         # calculate change in damage for lethal effects
         du.ind.D_h[z] = minimal_TK(ind[:embryo], p.ind[:KD_h][z], glb[:C_W][z], ind[:D_h][z]) 
@@ -154,9 +193,6 @@ end
         ind.h_z += LL2GUTS(ind.D_h[z], p.ind.E_h[z], p.ind.B_h[z])
     end
 
-    # for pmoas with increasing responses, the log-logistic response is transformed to obtain a monotonic increasing function
-    ind.y_j[2] = 1 - log(ind.y_j[2]) 
-    
     du.ind.S_z = -ind.h_z * ind.S_z # survival probability according to GUTS-RED-SD
     
     return nothing
