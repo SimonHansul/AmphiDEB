@@ -76,3 +76,8 @@ The PMoAs have a fixed order in the parameter matrices:
 ### v0.2.2
 
 - Technical bugfixes, resolved merge conflices caused during previous update
+
+
+### v 0.2.3 
+
+- Default increasing log-logistic response is changed from $1/LL2(x,p)$ to $1-log(LL2(x, p))$. Results in more plausible y-values for common value of slope $b$, if the same priors are used for all PMoAs.

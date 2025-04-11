@@ -154,7 +154,8 @@ end
         ind.h_z += LL2GUTS(ind.D_h[z], p.ind.E_h[z], p.ind.B_h[z])
     end
 
-    ind.y_j[2] /= ind.y_j[2]^2 # for pmoas with increasing responses (M), the relative response has to be inverted  (x/x^2 == 1/x) 
+    # for pmoas with increasing responses, the log-logistic response is transformed to obtain a monotonic increasing function
+    ind.y_j[2] = 1 - log(ind.y_j[2]) 
     
     du.ind.S_z = -ind.h_z * ind.S_z # survival probability according to GUTS-RED-SD
     
