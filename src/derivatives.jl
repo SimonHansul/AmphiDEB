@@ -1,6 +1,148 @@
 # derivatives.jl
 # model functions which are used by all models
 
+## alternative model configurations
+
+
+"""
+    AmphiDEB_ODE_with_loglogistic_TD!(du, u, p, t)::Nothing
+
+ODE system with log-logistic toxicodynamics. 
+"""
+function AmphiDEB_ODE_with_loglogistic_TD!(du, u, p, t)::Nothing
+
+    AmphiDEB_global!(du, u, p, t)
+    Pathogen_growth!(du, u, p, t)
+    AmphiDEB_individual_ODE_with_loglogistic_TD!(du, u, p, t)
+
+    return nothing
+end
+
+# linear toxicodynamics (classic "DEBtox" stress function)
+
+"""
+    AmphiDEB_ODE_with_linear_TD!(du, u, p, t)::Nothing
+
+ODE system with liner toxicodynamics. 
+"""
+function AmphiDEB_ODE_with_linear_TD!(du, u, p, t)::Nothing
+
+    AmphiDEB_global!(du, u, p, t)
+    Pathogen_growth!(du, u, p, t)
+    AmphiDEB_individual_ODE_with_linear_TD!(du, u, p, t)
+
+    return nothing
+end
+
+### individual-level ODE configurations
+
+function AmphiDEB_individual_ODE_with_loglogistic_TD!(du, u, p, t)::Nothing
+
+    TKTD_LL2!(du, u, p, t) # TKTD with mixtures assuming IA
+    Pathogen_Infection!(du, u, p, t) # infection, release of zoospores and relative response to sporangia density
+    Amphibian_DEB!(du, u, p, t) # Amphibian DEB model
+
+    return nothing
+end
+
+function AmphiDEB_individual_ODE_indepedenentaction_with_linear_TD!(du, u, p, t)::Nothing
+
+    TKTD_linear!(du, u, p, t) # TKTD with mixtures assuming IA
+    Pathogen_Infection!(du, u, p, t) # infection, release of zoospores and relative response to sporangia density
+    Amphibian_DEB!(du, u, p, t) # Amphibian DEB mode
+
+    return nothing
+
+end
+
+""" 
+    Amphibian_DEB!(du, u, p, t)::Nothing
+
+The default amphibian DEB model assumes a metamorphic reserve compartment,
+which is accumulated during larval development, and depleted during metamorphosis. 
+During metamorphosis, ingestion rate decreases gradually and reaches 0 at the end of metamorphosis.
+"""
+function Amphibian_DEB!(du, u, p, t)::Nothing
+
+    determine_life_stage!(du, u, p, t)
+    Arrhenius!(du, u, p, t)
+    eta_AS, kappa = life_stage_and_plasticity_effects(du, u, p, t)
+
+    ingestion!(du, u, p, t)
+    maintenance!(du, u, p, t)
+    growth!(du, u, p, t, eta_AS, kappa)
+    maturation!(du, u, p, t, kappa)
+    metamorphic_reserve!(du, u, p, t, eta_AS, kappa)
+
+    reproduction!(du, u, p, t, kappa)
+
+    return nothing
+end
+
+## callbacks (events)
+
+# adding pathogen spores at a fixed simulation time
+condition_inoculation(u, t, integrator) = integrator.p.glb.pathogen_inoculation_time - t
+function effect_inoculation!(integrator) 
+    integrator.u.glb.P_Z = integrator.p.glb.pathogen_inoculation_dose
+end
+
+# medium renewal, result in removal of spores
+condition_renewal(u, t, integrator) = prod(integrator.p.glb.medium_renewals  .- t)  
+function effect_renewal!(integrator)
+    integrator.u.glb.P_Z = 0.
+end
+
+# function to generate define all callbacks in a single CallbackSet
+function AmphODE_callbacks()
+
+    cb_inoculation = ContinuousCallback(condition_inoculation, effect_inoculation!)
+    cb_renewal = ContinuousCallback(condition_renewal, effect_renewal!)
+
+    return CallbackSet(
+        cb_inoculation, 
+        cb_renewal
+        )
+
+end
+
+## derivative functions
+
+### global derivatives
+
+function AmphiDEB_global!(du, u, p, t)::Nothing
+
+    for i in eachindex(u.glb[:X])
+        du.glb.X[i] = dX(p.glb[:dX_in][i], p.glb[:k_V][i], u.glb[:X][i])
+    end
+
+    #u.ind.T = p.glb.tempfun(t, p.glb.temp...) # TODO: temporally variable temperature could be added here, e.g. applying temperature_sinusoidal
+
+    return nothing
+end
+
+
+"""
+    temperature_sinusoidal(t::Float64, T_max::Float64, T_min::Float64, t_peak ::Float64)::Float64
+
+Calculate seasonal fluctuations in temperature from a sinusoidal function. 
+"""
+@inline function temperature_sinusoidal(t::Float64, T_mean::Float64, T_amp::Float64, T_phi::Float64)::Float64
+
+    return T_mean + T_amp * sin*(2π /365 * t + T_phi)
+
+end
+
+@inline function dX(
+    dX_in::Float64, 
+    k_V::Float64, 
+    X::Float64
+    )::Float64
+
+    return dX_in - k_V * X
+
+end
+
 """
     function dP_Z(
         mu::Float64,
@@ -33,6 +175,7 @@ function Pathogen_growth!(du, u, p, t)::Nothing
     return nothing
 end
 
+## individual-level derivatives
 
 """
     function dP_S(
@@ -48,8 +191,6 @@ end
         )::Float64
 
 Derivative of the individual-specific sporangia abundace `P_S`.
-
-
 """
 @inline function dP_S(
     v0::Float64,
@@ -66,7 +207,6 @@ Derivative of the individual-specific sporangia abundace `P_S`.
     return v0 * gamma * P_Z + v0 * eta * f * P_S - (sigma0 + sigma1 * Chi * P_S) * P_S
 
 end
-
 
 function Pathogen_Infection!(du, u, p, t)::Nothing
 
@@ -91,31 +231,7 @@ function Pathogen_Infection!(du, u, p, t)::Nothing
     return nothing
 end
 
-# starting with the definition of callbacks to trigger life stage transitions and global events (e.g. pathogen inoculation)
-# definition of the callback to incoulate pathogen at a given time-point
-
-condition_inoculation(u, t, integrator) = integrator.p.glb.pathogen_inoculation_time - t
-function effect_inoculation!(integrator) 
-    integrator.u.glb.P_Z = integrator.p.glb.pathogen_inoculation_dose
-end
-
-# definition of the callback for media renewals
-condition_renewal(u, t, integrator) = prod(integrator.p.glb.medium_renewals  .- t)  
-function effect_renewal!(integrator)
-    integrator.u.glb.P_Z = 0. # when renewal occurs, set zoospores to 0
-end
-
-function AmphODE_callbacks()
-
-    cb_inoculation = ContinuousCallback(condition_inoculation, effect_inoculation!)
-    cb_renewal = ContinuousCallback(condition_renewal, effect_renewal!)
-
-    return CallbackSet(
-        cb_inoculation, 
-        cb_renewal
-        )
-
-end
+#### TKTD functions
 
 @inline function LL2(x::Float64, p::NTuple{2,Float64})::Float64
     return (1 / (1 + Complex(x / p[1]) ^ p[2])).re
@@ -154,26 +270,53 @@ end
 end
 
 """
-    const drcfuncts_sublethal = (
-        (LL2, LL2pos, LL2, LL2, LL2, LL2),
-        (NEC2neg, NEC2pos, NEC2neg, NEC2neg, NEC2neg)
-    )
+    TKTD_LL2!(du, u, p, t)::Nothing
 
-Collection of alternative dose-response functions for sublethal effects. <br> 
-Which set of functions to use is determined by the species-specific parameter `drcmodel_sublethal`. 
-Setting `drcmodel_sublethal=1` results in the first set of functions being used, i.e. a log-logistic model. 
-Setting `drcmodel_sublethal=2` results in the second set of functions being used, i.e. a linear model with threshold. 
+TKTD model with following configuration: 
 
-The different functions in each set apply to the different PMoAs, i.e. G, M, A, R, H (decrease in maturity threshold for metamorphosis), κ (increase in allocation to maturation).
+- Mixture toxicity based on independent action (IA)
+- Log-logistic relationship between damage and metabolic processes
 """
-const drcfuncts_sublethal = (
-    (LL2, LL2pos, LL2, LL2, LL2, LL2),
-    (NEC2neg, NEC2pos, NEC2neg, NEC2neg, NEC2neg, NEC2neg)
-)
+@inline function TKTD_LL2!(du, u, p, t)::Nothing
+    
+    @unpack glb, ind = u
 
+    ind.y_j .= 1.0 # reset relative responses 
+    ind.h_z = p.ind[:h_b] # reset GUTS-SD hazard rate to background mortality
 
-# mixture TKTD based on independent action model
-@inline function TKTD_mix_IA!(du, u, p, t)::Nothing
+    for z in eachindex(glb.C_W) # for every chemical
+        for j in eachindex(ind.y_j) # for every PMoA
+            # calculate change in damage
+            du.ind.D_j[z,j] = minimal_TK(ind.embryo, p.ind.KD[z,j], glb.C_W[z], ind.D_j[z,j]) 
+            # update relative response with respect to PMoA j
+            # PMoAs with decreasing response
+            if j != 2 
+                ind.y_j[j] *= LL2(ind.D_j[z,j], p.ind.E[z,j], p.ind.B[z,j])
+            # PMoAs with increasing response
+            else
+                ind.y_j[j] *= LL2M(ind.D_j[z,j], p.ind.E[z,j], p.ind.B[z,j])
+            end
+        end
+        # calculate change in damage for lethal effects
+        du.ind.D_h[z] = minimal_TK(ind[:embryo], p.ind[:KD_h][z], glb[:C_W][z], ind[:D_h][z]) 
+        # update hazard rate
+        ind.h_z += LL2GUTS(ind.D_h[z], p.ind.E_h[z], p.ind.B_h[z])
+    end
+
+    du.ind.S_z = -ind.h_z * ind.S_z # survival probability according to GUTS-RED-SD
+    
+    return nothing
+end
+
+"""
+    TKTD_linear!(du, u, p, t)::Nothing
+
+TKTD model with following configuration: 
+
+- Mixture toxicity based on independent action (IA)
+- Linear-above-threshold relationship between damage and metabolic processes (the default DEBtox stress function)
+"""
+@inline function TKTD_linear!(du, u, p, t)::Nothing
 
     @unpack glb, ind = u
 
@@ -185,7 +328,13 @@ const drcfuncts_sublethal = (
             # calculate change in damage
             du.ind.D_j[z,j] = minimal_TK(ind.embryo, p.ind.KD[z,j], glb.C_W[z], ind.D_j[z,j]) 
             # update relative response with respect to PMoA j
-            ind.y_j[j] *= drcfuncts_sublethal[p.ind.drcmodel_sublethal][j](ind.D_j[z,j], p.ind.E[z,j], p.ind.B[z,j])
+            # PMoAs with decreasing response
+            if j != 2 
+                ind.y_j[j] *= NEC2neg(ind.D_j[z,j], p.ind.E[z,j], p.ind.B[z,j])
+            # PMoAs with increasing response
+            else
+                ind.y_j[j] *= NEC2pos(ind.D_j[z,j], p.ind.E[z,j], p.ind.B[z,j])
+            end
         end
         # calculate change in damage for lethal effects
         du.ind.D_h[z] = minimal_TK(ind[:embryo], p.ind[:KD_h][z], glb[:C_W][z], ind[:D_h][z]) 
@@ -653,7 +802,6 @@ end
     dS_mt::Float64
     )::Float64
 
-
     return (embryo + juvenile + adult) * dS_emb_juv_ad + larva * dS_lrv + metamorph * dS_mt
 
 end
@@ -779,87 +927,6 @@ function maturation!(du, u, p, t, kappa::Float64)::Nothing
 
     # for adults, there is no maturation => we only need to differentiate between non-adults and metamorph
     du.ind.H = dH(u.ind[:adult], u.ind[:metamorph], dH_all, dH_mt)
-
-    return nothing
-end
-
-"""
-    temperature_sinusoidal(t::Float64, T_max::Float64, T_min::Float64, t_peak ::Float64)::Float64
-
-Calculate seasonal fluctuations in temperature from a sinusoidal function. 
-"""
-@inline function temperature_sinusoidal(t::Float64, T_max::Float64, T_min::Float64, t_peak ::Float64)::Float64
-
-    amplitude = (T_max - T_min) / 2
-    offset = (T_max + T_min) / 2
-    omega = 2π / 365
-    phase_shift = (π / 2) - omega * t_peak
-
-    return amplitude * sin(omega * t + phase_shift) + offset
-
-end
-
-@inline function dX(
-    dX_in::Float64, 
-    k_V::Float64, 
-    X::Float64
-    )::Float64
-
-    return dX_in - k_V * X
-
-end
-
-function AmphiDEB_global!(du, u, p, t)::Nothing
-
-    for i in eachindex(u.glb[:X])
-        du.glb.X[i] = dX(p.glb[:dX_in][i], p.glb[:k_V][i], u.glb[:X][i])
-    end
-
-    #u.ind.T = p.glb.tempfun(t, p.glb.temp...) 
-
-    return nothing
-end
-
-
-""" 
-    Amphibian_DEB!(du, u, p, t)::Nothing
-
-The default amphibian DEB model assumes a metamorphic reserve compartment,
-which is accumulated during larval development, and depleted during metamorphosis. 
-During metamorphosis, ingestion rate decreases gradually and reaches 0 at the end of metamorphosis.
-"""
-function Amphibian_DEB!(du, u, p, t)::Nothing
-
-    determine_life_stage!(du, u, p, t)
-    Arrhenius!(du, u, p, t)
-    eta_AS, kappa = life_stage_and_plasticity_effects(du, u, p, t)
-
-    ingestion!(du, u, p, t)
-    maintenance!(du, u, p, t)
-    growth!(du, u, p, t, eta_AS, kappa)
-    maturation!(du, u, p, t, kappa)
-    metamorphic_reserve!(du, u, p, t, eta_AS, kappa)
-
-    reproduction!(du, u, p, t, kappa)
-
-    return nothing
-end
-
-function AmphiDEB_individual!(du, u, p, t)::Nothing
-
-    TKTD_mix_IA!(du, u, p, t) # TKTD with mixtures assuming IA
-    Pathogen_Infection!(du, u, p, t) # infection, release of zoospores and relative response to sporangia density
-    Amphibian_DEB!(du, u, p, t) # Amphibian DEB model
-
-    return nothing
-end
-
-
-function AmphiDEB_ODE!(du, u, p, t)::Nothing
-
-    AmphiDEB_global!(du, u, p, t)
-    Pathogen_growth!(du, u, p, t)
-    AmphiDEB_individual!(du, u, p, t)
 
     return nothing
 end
