@@ -12,7 +12,7 @@ for application with the AmphiDEB model.
 """
 function ODE_simulator(
     p::ComponentVector; 
-    model = AmphiDEB_ODE!, 
+    model = AmphiDEB_ODE_with_loglogistic_TD!, 
     callbacks = AmphODE_callbacks(), 
     statevars_init = initialize_statevars,
     gen_ind_params = p -> EcotoxSystems.generate_individual_params(p; pth = p.pth),
@@ -30,6 +30,46 @@ function ODE_simulator(
     )
 end
 
+"""
+    IBM_simulator(
+        p::ComponentVector;
+
+        init_global_statevars = initialize_global_statevars,
+        global_ode! = AmphiDEB_global!,
+        global_rules! = AmphiDEB_global_rules!,
+        
+        init_individual_statevars = initialize_individual_statevars,
+        individual_ode! = AmphiDEB_individual_ODE_with_loglogistic_TD!, 
+        individual_rules! = default_individual_rules!,
+        gen_ind_params = p -> EcotoxSystems.generate_individual_params(p; pth = p.pth),
+
+        kwargs...
+        )
+
+Compose and execute an individual-based simulation from the given components. <br>
+This function is a simple wrapper around `EcotoxSystems.IBM_simulator`. <br>
+Its main purpose is to provide a default configuration for the `AmphiDEB` model. 
+
+## Positional arguments
+
+- `p`: Parameters for all components: global (`p.glb`), Amphibian species-specific (`p.spc`) and pathogen-specific (`p.pth`)
+
+## Keyword arguments
+
+**Specification of global part of the system**
+
+- `init_global_statevars`: Function that initializes global state variables as `ComponentVector`, e.g. food abundance, temperature. 
+- `global_ode!`: Defintion of global ODE-based portion of the system (e.g. growth or experimental addition of food resource).
+- `global_rules!`: Definition of global rule-based portion of the system (e.g. computing population aggregates).
+
+**Specification of species/individual-specific part of the system**
+
+- `init_individual_statevars`: Function that initializes individual-level state variables as `ComponentVector`, e.g. structural mass, scaled adamge, etc.
+- `individual_ode!`: Definition of individual-level ODE-based portion of the system (e.g. derivatives of the DEB-TKTD module).
+- `individual_rules!`: Definition of individual-level rule-based portion of the system (e.g. death, discrete reproduction events).
+- `gen_ind_params`: A function that converts species-specific parameters to individual-specific parameters. For parameters which are provided as distributions, this takes a random sample from the distribution each time an individual is generated. 
+This argument probably does not have to be changed, unless additional components (other than `glb`, `spc` and `pth`) are added to the system.
+"""
 function IBM_simulator(
     # parameters
     p::ComponentVector;
@@ -41,7 +81,7 @@ function IBM_simulator(
     
     # default individual model
     init_individual_statevars = initialize_individual_statevars,
-    individual_ode! = AmphiDEB_individual!, 
+    individual_ode! = AmphiDEB_individual_ODE_with_loglogistic_TD!, 
     individual_rules! = default_individual_rules!,
     gen_ind_params = p -> EcotoxSystems.generate_individual_params(p; pth = p.pth),
 
