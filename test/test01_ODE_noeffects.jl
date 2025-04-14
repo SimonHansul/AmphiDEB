@@ -300,3 +300,17 @@ end
     @test 0.9 < reldiff_kJ < 1.1
 
 end
+
+
+using BenchmarkTools
+
+using LSODA
+
+
+
+
+
+@time AmphiDEB.ODE_simulator(
+    AmphiDEB.defaultparams, model = AmphiDEB.AmphiDEB_ODE_with_linear_TD!, 
+    alg = QNDF1()
+    );

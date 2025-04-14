@@ -45,7 +45,7 @@ function AmphiDEB_individual_ODE_with_loglogistic_TD!(du, u, p, t)::Nothing
     return nothing
 end
 
-function AmphiDEB_individual_ODE_indepedenentaction_with_linear_TD!(du, u, p, t)::Nothing
+function AmphiDEB_individual_ODE_with_linear_TD!(du, u, p, t)::Nothing
 
     TKTD_linear!(du, u, p, t) # TKTD with mixtures assuming IA
     Pathogen_Infection!(du, u, p, t) # infection, release of zoospores and relative response to sporangia density
@@ -294,7 +294,7 @@ TKTD model with following configuration:
                 ind.y_j[j] *= LL2(ind.D_j[z,j], p.ind.E[z,j], p.ind.B[z,j])
             # PMoAs with increasing response
             else
-                ind.y_j[j] *= LL2M(ind.D_j[z,j], p.ind.E[z,j], p.ind.B[z,j])
+                ind.y_j[j] *= LL2pos(ind.D_j[z,j], p.ind.E[z,j], p.ind.B[z,j])
             end
         end
         # calculate change in damage for lethal effects

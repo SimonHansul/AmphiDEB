@@ -121,7 +121,7 @@ end
 
 function AmphiDEB_individual_alt!(du, u, p, t)::Nothing
 
-    TKTD_mix_IA!(du, u, p, t) # TKTD following default model
+    TKTD_LL2!(du, u, p, t) # TKTD following default model
     Pathogen_Infection!(du, u, p, t) # infection, release of zoospores and relative response to sporangia density
     Amphibian_DEB_alt!(du, u, p, t) # Amphibian DEB model
 
