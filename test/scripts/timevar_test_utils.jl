@@ -102,5 +102,6 @@ p = ComponentVector(
         Chi = LogNormal(log(1)+1^2, 1), 
         E_P = [Inf, Inf, Inf, Inf], 
         B_P = [2., 2., 2., 2.], 
-    )
+    ), 
+    pth = AmphiDEB.pth
 )

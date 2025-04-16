@@ -13,7 +13,7 @@ p.glb.C_W = [0.]
 This represents constant exposure concentrations of all chemical stressors in the system. <br>
 In this case, there is one stressor, and the exposure concentration is 0. <br>
 
-In the simplest case, you can simulate different exposure scenarios by modifying 
+In the simplest case, we can simulate different exposure scenarios by modifying 
 `p.glb.C_W`. <br><br>
 
 The [EcotoxSystems](https://github.com/simonhansul/ecotoxsystems.jl) package provides a helper function `exposure()`, 
@@ -173,8 +173,48 @@ In any case, it has to be possible to call
 C_W = interp_C_W(t)
 ```
 
-to get the interpolated exposure concentration at time `t`.
+to get the interpolated exposure concentration at time `t`. <br><br>
 
+This gives you complete freedom in specifying the interpolation function. <br>
+The easier way to simulate time-variable exposure, however, is to again use `exposure()`. <br>
+Previously, we had provided `C_Wmat` as a matrix of concentrations to simulate constant exposures. <br>
+Now, we provide `C_Wmat`as a `DataFrame`, listing the exposures for all stressors and scenarios. <br>
 
-## Simulating multiple treatments at once 
+This dataframe has a fixed format: 
 
+- A column `scenario`, indicating the exposure scenario as numeric value
+- A colulmn `t`, referring to time in the simulation 
+- A variable number of columns `C_W_1`, `C_W_2`, ... `C_W_n`, listing time-resolved exposure concentrations for stressors $1, 2, ...n$.
+
+The order of the columns does not matter, but the naming does. <br>
+The following table specifies a control, two pulsed single-stressor exposures 
+and one pulsed mixture exposure. <br>
+
+| scenario | t | C_W_1 | C_W_2 |
+|---|---|---|---|
+| 0  | 0 | 0 | 0 |
+| 0 | 14 | 0 | 0 |
+| 1 | 0 | 0 | 0 |
+| 1 | 5 | 0 | 0 |
+| 1 | 5 | 2 | 0 |
+| 1 | 7 | 0 | 0 |
+| 1 | 7 | 1 | 0 |
+| 1 | 9 | 0 | 0 |
+| 1 | 14 | 0 | 0 |
+| 2 | 0 | 0 | 0 |
+| 2 | 5 | 0 | 0 |
+| 2 | 5 | 0 | 0.6 |
+| 2 | 7 | 0 | 0 |
+| 2 | 7 | 0 | 0.3 |
+| 2 | 9 | 0 | 0 |
+| 2 | 14 | 0 | 0 |
+| 3 | 0 | 0 | 0 |
+| 3 | 5 | 0 | 0 |
+| 3 | 5 | 2 | 0.6 |
+| 3 | 7 | 0 | 0 |
+| 3 | 7 | 1 | 0.3 |
+| 3 | 9 | 0 | 0 |
+| 3 | 14 | 0 | 0 |
+
+To simulate exposure peaks, we can add a zero and non-zero value for the identical time-point. <br>
+Attempting to extrapolate beyond the time points listed in the exposure scenario will result in an error. 

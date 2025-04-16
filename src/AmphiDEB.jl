@@ -11,6 +11,7 @@ import DataFrames: AbstractDataFrame
 using ComponentArrays, StaticArrays
 using OrdinaryDiffEq
 using StatsBase
+using Interpolations
 
 include("default_params.jl") # default parameter sets
 include("derivatives.jl") # derivatives of the default model

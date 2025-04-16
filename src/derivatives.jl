@@ -121,27 +121,34 @@ function AmphiDEB_global!(du, u, p, t)::Nothing
     return nothing
 end
 
-@inline function calc_dC_W(
+@inline function _calc_dC_W(
     C_W::Float64,
-    t::Float64
+    t::Float64,
     )::Float64
     
     return C_W
 
 end
 
+@inline function _calc_dC_W(
+    C_W::Union{Function,AbstractInterpolation},
+    t::Float64
+    )::Float64 
+
+    return C_W(t)
+
+end
+
 """
     C_W(du, u, p, t)::Nothing
 
-Calculate current value of exposure concentration `C_W`. <br>
+Calculate current value of exposure concentration `C_W` for all stressors. <br>
 Uses multiple dispatch to differentiate between constant and time-variable exposure. <br>
-
-`p.glb.C_W` can be either a `Vector{Float64}` or a `Vector{Function}`.
 """
 @inline function C_W(du, u, p, t)::Nothing
 
     for i in eachindex(p.glb[:C_W])
-        du.glb.C_W[i] = calc_C_W(p.glb[:C_W][i], t)
+        du.glb.C_W[i] = _calc_C_W(p.glb[:C_W][i], t)
     end
 
     return nothing
