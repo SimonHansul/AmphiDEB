@@ -1,4 +1,4 @@
-"""
+"""0
 AmphiDEB global parameters with defaults.
 """
 
@@ -114,8 +114,6 @@ spc = ComponentVector(
     #=
     TKTD parameters    
     =#
-    
-    drcmodel_sublethal = 1, # 1 = log-logistic, 2 = linear with threshold
 
     h_b = 0., # background mortality
     

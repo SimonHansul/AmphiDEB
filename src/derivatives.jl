@@ -121,6 +121,32 @@ function AmphiDEB_global!(du, u, p, t)::Nothing
     return nothing
 end
 
+@inline function calc_dC_W(
+    C_W::Float64,
+    t::Float64
+    )::Float64
+    
+    return C_W
+
+end
+
+"""
+    C_W(du, u, p, t)::Nothing
+
+Calculate current value of exposure concentration `C_W`. <br>
+Uses multiple dispatch to differentiate between constant and time-variable exposure. <br>
+
+`p.glb.C_W` can be either a `Vector{Float64}` or a `Vector{Function}`.
+"""
+@inline function C_W(du, u, p, t)::Nothing
+
+    for i in eachindex(p.glb[:C_W])
+        du.glb.C_W[i] = calc_C_W(p.glb[:C_W][i], t)
+    end
+
+    return nothing
+end
+
 
 """
     temperature_sinusoidal(t::Float64, T_max::Float64, T_min::Float64, t_peak ::Float64)::Float64
