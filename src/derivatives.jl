@@ -290,7 +290,7 @@ TKTD model with following configuration:
             du.ind.D_j[z,j] = minimal_TK(ind.embryo, p.ind.KD[z,j], glb.C_W[z], ind.D_j[z,j]) 
             # update relative response with respect to PMoA j
             # PMoAs with decreasing response
-            if !(y in [2,6]) 
+            if !(j in [2,6]) 
                 ind.y_j[j] *= LL2(ind.D_j[z,j], p.ind.E[z,j], p.ind.B[z,j])
             # PMoAs with increasing response
             else

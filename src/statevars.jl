@@ -43,12 +43,12 @@ function initialize_individual_statevars(
         M = 0., # somatic maintenance
         J = 0., # maturity maintenance 
         
-        D_j = EcotoxSystems.constrmmat(p.ind.KD), # sublethal damage per stressor and PMoA
-        D_h = EcotoxSystems.constrmvec(p.ind.KD_h), # lethal damage per stressor
+        D_j = EcotoxSystems.constrmmat(p.ind.KD), # sublethal damage per stressor and PMoA; constrmmat constructs a MMatrix from the shape of the input
+        D_h = EcotoxSystems.constrmvec(p.ind.KD_h), # lethal damage per stressor; constrmvec constructs a MVector from the shape of the 
 
         y_T = 1.,
         
-        y_j = Float64[1. 1. 1. 1. 1. 1.],  # relative response per stressor and pmoa
+        y_j = @MMatrix([1. 1. 1. 1. 1. 1. 1.]),  # relative response per stressor and pmoa
         h_z = 0., # hazard rate caused by chemical stressors
         S_z = 1., # chemical-related survival probability
 

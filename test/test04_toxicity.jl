@@ -17,12 +17,12 @@ import EcotoxSystems: constrmvec
 using Revise
 
 using AmphiDEB
-@time import AmphiDEB: defaultparams, ODE_simulator, Amphibian_DEB!, AmphiDEB_ODE!
+@time import AmphiDEB: defaultparams
 
 
 @testset "Toxicity with default parameters" begin 
     
-    for pmoa_idx in 1:6
+    for pmoa_idx in 1:7
     
         global p = deepcopy(defaultparams)
     
@@ -59,12 +59,13 @@ using AmphiDEB
             plot(:t, :y_j_1_3, group = :C_W_1, ylim = (-0.01, 1.01)),
             plot(:t, :y_j_1_4, group = :C_W_1, ylim = (-0.01, 1.01)),
             plot(:t, :y_j_1_5, group = :C_W_1, ylim = (-0.01, 1.01)),
-            plot(:t, :y_j_1_6, group = :C_W_1, ylim = (-0.01, 1.01)),
+            plot(:t, :y_j_1_6, group = :C_W_1, ylim = (0.99, 2)),
+            plot(:t, :y_j_1_7, group = :C_W_1, ylim = (-0.01, 1.01)),
             plot(:t, :R, group = :C_W_1),
             plot(:t, :H, group = :C_W_1),
             plot(:t, :larva, group = :C_W_1, linetype = :steppre),
             xrotation = 45, 
-            xlabel = "t", ylabel = ["S" "E_mt" "W" "y_G" "y_M" "y_A" "y_R" "y_H" "y_κ" "R" "H" "larva"], 
+            xlabel = "t", ylabel = ["S" "E_mt" "W" "y_G" "y_M" "y_A" "y_R" "y_Hneg" "y_Hpos" "y_κ" "R" "H" "larva"], 
             leg = [:topleft false false false false false false], legendtitle = "C_W", 
             size = (1000,600), bottommargin = 5mm, leftmargin = 5mm
             )
@@ -75,7 +76,7 @@ using AmphiDEB
         c = Symbol("y_j_1_$(pmoa_idx)")
 
         # for every PMoA, verify that the relative responses are calculated correctly
-        for idx in 1:6
+        for idx in 1:7
             # get the associated y-column
             c_idx = Symbol("y_j_1_$(pmoa_idx)")
             # if this is not the currently engaged pmoa
@@ -86,7 +87,7 @@ using AmphiDEB
             else
                 # the highest concentration is equal to the median effective damage, 
                 # so we expect y to bottom out around 0.5 for the given parameters (or max out at 2. for PMoA M)
-                if pmoa_idx != 2
+                if !(pmoa_idx in [2,6])
                     @test isapprox(0.5, minimum(sim[:,c]), atol = 0.01)
                 else
                     @test isapprox(1.69, maximum(sim[:,c]), atol = 0.01)
