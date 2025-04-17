@@ -29,7 +29,7 @@ using EcotoxSystems
 
     p.spc.Z = Dirac(1.)
 
-    sim = @replicates AmphiDEB.ODE_simulator(p) 10
+    global sim = @replicates AmphiDEB.ODE_simulator(p) 10
         
     sim[!,:E_mt_rel] = sim.E_mt ./ (sim.S + sim.E_mt)
     sim[!,:W_tot] = sim.S .+ sim.E_mt 
@@ -46,9 +46,12 @@ using EcotoxSystems
 
     # check for final median zoospore and sporangia abundance
 
-    @test 500 <= median(sim[end,:P_Z]) <= 2000
-    @test 1 <= median(sim[end,:P_S]) <= 20
+    sim_end = sim[sim.t .== maximum(sim.t),:]
+
+    @test 500 <= median(sim_end.P_Z) <= 2000
+    @test 1 <= median(sim_end.P_S) <= 20
 end
+
 
 @testset "Pathogen growth with effects" begin 
 
@@ -79,4 +82,8 @@ end
         xlabel = "t", xrotation = 45
         )
     display(plt)
+
+    sim_end = sim[sim.t .== maximum(sim.t),:]
+
+    @test 1 < median(sim_end.S) < 8
 end

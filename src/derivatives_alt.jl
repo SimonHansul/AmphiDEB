@@ -142,7 +142,7 @@ This leads to the following main differences:
 function Amphibian_DEB_alt!(du, u, p, t)::Nothing
 
     determine_life_stage!(du, u, p, t)
-    eta_AS, kappa = life_stage_and_plasticity_effects!(du, u, p, t)
+    eta_AS, kappa = life_stage_and_plasticity_effects(du, u, p, t)
 
     ingestion_alt!(du, u, p, t)
     maintenance_alt!(du.ind, u.ind, p.ind, t)
