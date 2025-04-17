@@ -26,7 +26,7 @@ using AmphiDEB
     
         global p = deepcopy(defaultparams)
     
-        p.glb.t_max = 60.
+        p.glb.t_max = 20.
         #p.glb.pathogen_inoculation_time = Inf
 
         p.glb.dX_in = [15. 15.]
@@ -41,8 +41,8 @@ using AmphiDEB
         # check that the syntax for parameter assignment works 
         @test sum(p.spc.KD .> 0) == 1
 
-        @time global sim = EcotoxSystems.exposure(
-            ODE_simulator, 
+        @time global sim = exposure(
+            AmphiDEB.ODE_simulator, 
             p,
             Matrix(hcat([0.; 1.; 2.;]...)')
             )
@@ -53,17 +53,19 @@ using AmphiDEB
         plt = @df sim plot(
             plot(:t, :S, group = :C_W_1),
             plot(:t, :E_mt, group = :C_W_1),
-            plot(:t, :y_j_1_1, group = :C_W_1),
-            plot(:t, :y_j_1_2, group = :C_W_1),
-            plot(:t, :y_j_1_3, group = :C_W_1),
-            plot(:t, :y_j_1_4, group = :C_W_1),
-            plot(:t, :y_j_1_5, group = :C_W_1),
-            plot(:t, :y_j_1_6, group = :C_W_1),
+            plot(:t, :S .+ :E_mt, group = :C_W_1),
+            plot(:t, :y_j_1_1, group = :C_W_1, ylim = (-0.01, 1.01)),
+            plot(:t, :y_j_1_2, group = :C_W_1, ylim = (0.99, 2)),
+            plot(:t, :y_j_1_3, group = :C_W_1, ylim = (-0.01, 1.01)),
+            plot(:t, :y_j_1_4, group = :C_W_1, ylim = (-0.01, 1.01)),
+            plot(:t, :y_j_1_5, group = :C_W_1, ylim = (-0.01, 1.01)),
+            plot(:t, :y_j_1_6, group = :C_W_1, ylim = (-0.01, 1.01)),
             plot(:t, :R, group = :C_W_1),
             plot(:t, :H, group = :C_W_1),
+            plot(:t, :larva, group = :C_W_1, linetype = :steppre),
             xrotation = 45, 
-            xlabel = "t", ylabel = ["S" "E_mt" "y_G" "y_M" "y_A" "y_R" "y_H" "y_κ" "R" "H"], 
-            leg = [:topleft false false false false], legendtitle = "C_W", 
+            xlabel = "t", ylabel = ["S" "E_mt" "W" "y_G" "y_M" "y_A" "y_R" "y_H" "y_κ" "R" "H" "larva"], 
+            leg = [:topleft false false false false false false], legendtitle = "C_W", 
             size = (1000,600), bottommargin = 5mm, leftmargin = 5mm
             )
 

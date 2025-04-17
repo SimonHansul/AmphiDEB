@@ -290,7 +290,7 @@ TKTD model with following configuration:
             du.ind.D_j[z,j] = minimal_TK(ind.embryo, p.ind.KD[z,j], glb.C_W[z], ind.D_j[z,j]) 
             # update relative response with respect to PMoA j
             # PMoAs with decreasing response
-            if j != 2 
+            if !(y in [2,6]) 
                 ind.y_j[j] *= LL2(ind.D_j[z,j], p.ind.E[z,j], p.ind.B[z,j])
             # PMoAs with increasing response
             else
@@ -360,32 +360,35 @@ end
     X_emb::Float64,
     H::Float64,
     H_j1::Float64,
-    y_H::Float64;
+    y_H_neg::Float64, 
+    y_H_pos::Float64;
     beta1::Float64 = 1e3,
     beta2::Float64 = 1e7
     )::Float64
 
-    return sig(X_emb, 0., 1., 0., beta = beta1) * sig(H, H_j1 * y_H, 1., 0., beta = beta2)
+    return sig(X_emb, 0., 1., 0., beta = beta1) * sig(H, H_j1 * y_H_neg * y_H_pos, 1., 0., beta = beta2)
 
 end
 
 @inline function is_metamorph(
     H::Float64, 
     H_j1::Float64, 
-    y_H::Float64,
+    y_H_neg::Float64,
+    y_H_pos::Float64,
     E_mt::Float64;
     beta1::Float64 = 1e7, 
     beta2::Float64 = 1e3, 
     )::Float64
 
-    return sig(H, H_j1 * y_H, 0., 1., beta = beta1) * sig(E_mt, 0., 0., 1., beta = beta2) 
+    return sig(H, H_j1 * y_H_neg * y_H_pos, 0., 1., beta = beta1) * sig(E_mt, 0., 0., 1., beta = beta2) 
 
 end
 
 @inline function is_juvenile(
     H::Float64,
     H_j1::Float64,
-    y_H::Float64,
+    y_H_neg::Float64,
+    y_H_pos::Float64,
     E_mt::Float64,
     H_p::Float64;
     beta1 = 1e3,
@@ -393,7 +396,7 @@ end
     beta3 = 1e3
     )::Float64
 
-    return sig(H, H_j1 * y_H, 0., 1., beta = beta1) * sig(E_mt, 0., 1., 0., beta = beta2) * sig(H, H_p, 1., 0., beta = beta3)
+    return sig(H, H_j1 * y_H_neg * y_H_pos, 0., 1., beta = beta1) * sig(E_mt, 0., 1., 0., beta = beta2) * sig(H, H_p, 1., 0., beta = beta3)
 
 end
 
@@ -411,9 +414,9 @@ end
 function determine_life_stage!(du, u, p, t)::Nothing
 
     u.ind.embryo = is_embryo(u.ind[:X_emb])
-    u.ind.larva = is_larva(u.ind[:X_emb], u.ind[:H], p.ind[:H_j1], u.ind[:y_j][5])
-    u.ind.metamorph = is_metamorph(u.ind[:H], p.ind[:H_j1], u.ind[:y_j][5], u.ind[:E_mt]) 
-    u.ind.juvenile = is_juvenile(u.ind[:H], p.ind[:H_j1], u.ind[:y_j][5], u.ind[:E_mt], p.ind[:H_p]) 
+    u.ind.larva = is_larva(u.ind[:X_emb], u.ind[:H], p.ind[:H_j1], u.ind[:y_j][5], u.ind[:y_j][6])
+    u.ind.metamorph = is_metamorph(u.ind[:H], p.ind[:H_j1], u.ind[:y_j][5], u.ind[:y_j][6], u.ind[:E_mt]) 
+    u.ind.juvenile = is_juvenile(u.ind[:H], p.ind[:H_j1], u.ind[:y_j][5], u.ind[:y_j][6], u.ind[:E_mt], p.ind[:H_p]) 
     u.ind.adult = is_adult(u.ind[:H], p.ind[:H_p]) 
 
     return nothing
@@ -482,7 +485,7 @@ e.g. if we have eta_AS_emb and eta_AS_juv, then eta_AS_emb is applied for eymbro
 function life_stage_and_plasticity_effects(du, u, p, t)::Tuple{Float64,Float64}
 
     eta_AS = calc_eta_AS(u.ind[:embryo], u.ind[:larva], u.ind[:metamorph], p.ind[:eta_AS_emb], u.ind[:juvenile], u.ind[:adult], p.ind[:eta_AS_juv])
-    kappa = calc_kappa(u.ind[:embryo], u.ind[:larva], u.ind[:metamorph], p.ind[:kappa_emb], u.ind[:juvenile], u.ind[:adult], p.ind[:kappa_juv], p.ind[:b_T], p.ind[:T_ref], p.glb[:T], u.ind.y_j[6])
+    kappa = calc_kappa(u.ind[:embryo], u.ind[:larva], u.ind[:metamorph], p.ind[:kappa_emb], u.ind[:juvenile], u.ind[:adult], p.ind[:kappa_juv], p.ind[:b_T], p.ind[:T_ref], p.glb[:T], u.ind.y_j[7])
 
     return eta_AS, kappa
 end
@@ -518,14 +521,6 @@ function Arrhenius!(du, u, p, t)::Nothing
 
 end
 
-
-function  life_stage_and_plasticity_effects!(du, u, p, t)::Tuple{Float64,Float64}
-    
-    eta_AS = calc_eta_AS(u.ind[:embryo], u.ind[:larva], u.ind[:metamorph], p.ind[:eta_AS_emb], u.ind[:juvenile], u.ind[:adult], p.ind[:eta_AS_juv])
-    kappa = calc_kappa(u.ind[:embryo], u.ind[:larva], u.ind[:metamorph], p.ind[:kappa_emb], u.ind[:juvenile], u.ind[:adult], p.ind[:kappa_juv], p.ind[:b_T], p.ind[:T_ref], p.glb[:T], u.ind.y_j[6])
-
-    return eta_AS, kappa
-end
 
 @inline function f_X(
     X::Float64,
@@ -824,13 +819,16 @@ end
 
 # metamorphic reserve dynamics for larvae
 @inline function calc_dE_mt_lrv(
+    eta_AS::Float64, 
+    y_G::Float64,
+    y_G_P::Float64,
     gamma::Float64,
     kappa::Float64,
     dA::Float64,
     dM::Float64
     )::Float64
 
-    return gamma * (kappa * dA - dM)
+    return eta_AS * y_G * y_G_P * gamma * (kappa * dA - dM)
 
 end
 
@@ -845,6 +843,7 @@ end
 
 end
 
+# metamorphic reserve dynamics for any life stage
 @inline function dE_mt(
     larva::Float64,
     dE_mt_lrv::Float64,
@@ -856,6 +855,7 @@ end
 
 end
 
+# tracking maximum reserve level
 @inline function dE_mt_max(
     larva::Float64,
     dE_mt::Float64
@@ -873,7 +873,7 @@ Metamorphic reserve is accumulated during larval development and depleted during
 """
 function metamorphic_reserve!(du, u, p, t, eta_AS::Float64, kappa::Float64)::Nothing
     
-    dE_mt_lrv = calc_dE_mt_lrv(p.ind[:gamma], kappa, du.ind[:A], du.ind[:M]) 
+    dE_mt_lrv = calc_dE_mt_lrv(p.ind[:eta_AS_emb], u.ind[:y_j][1], u.ind[:y_jP][1], p.ind[:gamma], kappa, du.ind[:A], du.ind[:M]) 
     dE_mt_mt = calc_dE_mt_mt(du.ind[:H], du.ind[:J], du.ind[:M])
     du.ind.E_mt = dE_mt(u.ind[:larva], dE_mt_lrv, u.ind[:metamorph], dE_mt_mt)
     du.ind.E_mt_max = dE_mt_max(u.ind[:larva], du.ind[:E_mt])
