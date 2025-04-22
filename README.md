@@ -18,8 +18,9 @@ The PMoAs have a fixed order in the parameter matrices:
 2. Increase in somatic and maturity maintenance costs ($M$)
 3. Decrease in assimilation efficiency ($A$)
 4. Decrease in reproduction efficiency ($R$)
-5. Increase in maturity threshold for metamorphosis ($H$)
-6. Decrease in $\kappa$ ($\kappa$, acceleration of ontogenesis)
+5. Decrease in maturity threshold for metamorphosis ($H^-$)
+6. Increase in maturity threshold for metamorphosis ($H^+$)
+7. Decrease in $\kappa$ ($\kappa$, acceleration of ontogenesis) ($\Kappa$)
 
 ## Changelog 
 
@@ -81,7 +82,7 @@ The PMoAs have a fixed order in the parameter matrices:
 ### v 0.2.3 
 
 - Default increasing log-logistic response is changed from $1/LL2(x,p)$ to $1-log(LL2(x, p))$. Results in more plausible y-values for common value of slope $b$, if the same priors are used for all PMoAs.
-- Type of drc model used for sublethal effects can be changed through paramter `p.spc.drcmodel_sublethal` (1 = log-logistic, 2  = linear with threshold). 
+- Type of drc model used for sublethal effects can be changed through paramter `spc.drcmodel_sublethal` (1 = log-logistic, 2  = linear with threshold). 
 
 
 ### v 0.3.0
@@ -89,10 +90,17 @@ The PMoAs have a fixed order in the parameter matrices:
 **Breaking changes**
 
 - In the default derivatives, `calc_dE_mt_lrv` has been changed so that `eta_AS_lrv` and `y_G` also affects `dE_mt`. This leads to more patterns in the TKTD simulations when the PMoA is `G` (decrease in `eta_AS`).
+- `spc.drcmodel_sublethal` is not a parameter anymore. Different TKTD model configuration are provided through modular functions
+    - `AmphiDEB_ODE_with_loglogistic_TD!`
+    - `AmphiDEB_ODE_with_linear_TD!`
+    - `AmphiDEB_individual_ODE_with_loglogistic_TD!`
+    - `AmphiDEB_individual_ODE_with_linear_TD!`
+    - `TKTD_LL2!`
+    - `TKTD_linear!`
 
-**Implemented additional PMoA**
+**Non-breaking changes**
 
-- PMoAs are now (in this order):
+- Implemented additional PMoA. PMoAs are now (in this order):
     1. Decrease in growth efficiency
     2. Increase in maintenance costs (somatic + maturity)
     3. Decrease in assimilation efficiency
