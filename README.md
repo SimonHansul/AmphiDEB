@@ -112,3 +112,7 @@ The PMoAs have a fixed order in the parameter matrices:
 ### v0.3.1
 
 - Connection to `C_W` is now life stage specific: Only larvae are affected by aquatic exposure.
+
+### v0.3.2
+
+- bugfix in `TK_minimal_aquatic`

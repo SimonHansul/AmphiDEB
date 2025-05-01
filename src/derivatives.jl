@@ -281,7 +281,7 @@ Only applies to larvae.
     D::Float64
     )::Float64
 
-    return larva * k_D * (C_W - D)
+    return k_D * ((larva * C_W) - D)
 
 end
 
