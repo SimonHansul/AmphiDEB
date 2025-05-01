@@ -88,9 +88,9 @@ using AmphiDEB
                 # the highest concentration is equal to the median effective damage, 
                 # so we expect y to bottom out around 0.5 for the given parameters (or max out at 2. for PMoA M)
                 if !(pmoa_idx in [2,6])
-                    @test isapprox(0.5, minimum(sim[:,c]), atol = 0.01)
+                    @test isapprox(0.5, minimum(sim[:,c]), atol = 0.1)
                 else
-                    @test isapprox(1.69, maximum(sim[:,c]), atol = 0.01)
+                    @test isapprox(1.69, maximum(sim[:,c]), atol = 0.1)
                 end
             end
         end

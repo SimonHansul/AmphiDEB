@@ -1,8 +1,8 @@
 # This file is machine-generated - editing it directly is not advised
 
-julia_version = "1.11.0"
+julia_version = "1.11.2"
 manifest_format = "2.0"
-project_hash = "e190b05d18e1efbb1a23ccd0f9cbd31a33cd6e9e"
+project_hash = "7d800f49c041f6cee7771db078755a772f0baf22"
 
 [[deps.ADTypes]]
 git-tree-sha1 = "e2478490447631aedba0823d4d7a80b2cc8cdb32"
@@ -71,7 +71,7 @@ version = "1.1.3"
 deps = ["ComponentArrays", "DataFrames", "DataStructures", "Distributions", "EcotoxSystems", "OrdinaryDiffEq", "Parameters", "PrecompileTools", "StaticArrays", "StatsBase"]
 path = ".."
 uuid = "eee04faf-3499-4765-a0c5-d172f1a51fe4"
-version = "0.2.3"
+version = "0.3.0"
 
 [[deps.Aqua]]
 deps = ["Compat", "Pkg", "Test"]
@@ -311,10 +311,10 @@ uuid = "e66e0078-7015-5450-92f7-15fbd957f2ae"
 version = "1.1.1+0"
 
 [[deps.ComponentArrays]]
-deps = ["Adapt", "ArrayInterface", "ChainRulesCore", "ConstructionBase", "ForwardDiff", "Functors", "LinearAlgebra", "StaticArrayInterface", "StaticArraysCore"]
-git-tree-sha1 = "eac93b2a05d33465d50e5448aefba8c06a69f738"
+deps = ["Adapt", "ArrayInterface", "ChainRulesCore", "ConstructionBase", "Functors", "LinearAlgebra", "StaticArrayInterface", "StaticArraysCore"]
+git-tree-sha1 = "9b870f26eb31f7dfc7e5c2678d4be23a04aea702"
 uuid = "b0b7db55-cfe3-40fc-9ded-d10e2dbeff66"
-version = "0.15.25"
+version = "0.15.26"
 
     [deps.ComponentArrays.extensions]
     ComponentArraysGPUArraysExt = "GPUArrays"
@@ -575,11 +575,11 @@ version = "1.6.0"
 
 [[deps.EcotoxSystems]]
 deps = ["ComponentArrays", "DataFrames", "Distributions", "OrdinaryDiffEq", "Parameters", "PrecompileTools", "Random", "RecipesBase", "StaticArrays", "StatsBase"]
-git-tree-sha1 = "9b3f90b3792651fb4495355fd8028eb4b549308b"
+git-tree-sha1 = "97bc86efa3c924d5cee5b2f5f6a0401329f45b8a"
 repo-rev = "main"
-repo-url = "https://github.com/simonhansul/EcotoxSystems.jl"
+repo-url = "https://github.com/simonhansul/ecotoxsystems.jl.git"
 uuid = "a070e96f-54e2-4e3c-8571-6208d1dd8981"
-version = "0.2.1"
+version = "0.2.3"
 
 [[deps.EnumX]]
 git-tree-sha1 = "bdb1942cd4c45e3c678fd11569d5cccd80976237"
@@ -1012,18 +1012,6 @@ deps = ["Artifacts", "JLLWrappers", "Libdl"]
 git-tree-sha1 = "78211fb6cbc872f77cad3fc0b6cf647d923f4929"
 uuid = "1d63c593-3942-5779-bab2-d838dc0a180e"
 version = "18.1.7+0"
-
-[[deps.LSODA]]
-deps = ["Compat", "DiffEqBase", "LSODA_jll", "LinearAlgebra", "Parameters", "Printf", "SciMLBase"]
-git-tree-sha1 = "49c00ced68a8033b30fb1009b8dea7871aa9e928"
-uuid = "7f56f5a3-f504-529b-bc02-0b1fe5e64312"
-version = "0.7.5"
-
-[[deps.LSODA_jll]]
-deps = ["Artifacts", "JLLWrappers", "Libdl"]
-git-tree-sha1 = "3c5277e990a9026f31a35ca6c4acddc8a706a38c"
-uuid = "aae0fff6-70f8-51e1-979a-8150c7cc74bd"
-version = "0.1.2+0"
 
 [[deps.LZO_jll]]
 deps = ["Artifacts", "JLLWrappers", "Libdl"]

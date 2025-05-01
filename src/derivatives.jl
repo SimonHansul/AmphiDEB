@@ -224,9 +224,14 @@ function Pathogen_Infection!(du, u, p, t)::Nothing
     du.glb.P_Z -= gamma * u.glb.P_Z # encystment
 
     # relative response to pathogen 
-   
-    @. u.ind.y_jP = LL2(u.ind.P_S, p.ind.E_P, p.ind.B_P) 
-    u.ind.y_jP[2] /= u.ind.y_jP[2]^2 # converting a monotonically decreasing to increasing response
+    
+    for j in eachindex(u.ind[:y_jP])
+        if j != 2
+            u.ind.y_jP[j] = LL2(u.ind.P_S, p.ind.E_P[j], p.ind.B_P[j])
+        else
+            u.ind.y_jP[j] = LL2pos(u.ind.P_S, p.ind.E_P[j], p.ind.B_P[j])
+        end
+    end
 
     return nothing
 end
@@ -258,14 +263,25 @@ end
 @inline NEC2pos(x::Float64, p1::Float64, p2::Float64)::Float64 = NEC2pos(x, (p1, p2))
 
 
-@inline function minimal_TK(
-    embryo::Float64,
+"""
+    minimal_TK_aquatic(
+        larva::Float64,
+        k_D::Float64, 
+        C_W::Float64,
+        D::Float64
+        )::Float64
+
+Minimal TK model (no feedbacks) for aquatic exposure. 
+Only applies to larvae.
+"""
+@inline function minimal_TK_aquatic(
+    larva::Float64,
     k_D::Float64, 
     C_W::Float64,
     D::Float64
     )::Float64
 
-    return (1-embryo) * k_D * (C_W - D)
+    return larva * k_D * (C_W - D)
 
 end
 
@@ -287,7 +303,7 @@ TKTD model with following configuration:
     for z in eachindex(glb.C_W) # for every chemical
         for j in eachindex(ind.y_j) # for every PMoA
             # calculate change in damage
-            du.ind.D_j[z,j] = minimal_TK(ind.embryo, p.ind.KD[z,j], glb.C_W[z], ind.D_j[z,j]) 
+            du.ind.D_j[z,j] = minimal_TK_aquatic(ind[:larva], p.ind.KD[z,j], glb.C_W[z], ind.D_j[z,j]) 
             # update relative response with respect to PMoA j
             # PMoAs with decreasing response
             if !(j in [2,6]) 
@@ -298,7 +314,7 @@ TKTD model with following configuration:
             end
         end
         # calculate change in damage for lethal effects
-        du.ind.D_h[z] = minimal_TK(ind[:embryo], p.ind[:KD_h][z], glb[:C_W][z], ind[:D_h][z]) 
+        du.ind.D_h[z] = minimal_TK_aquatic(ind[:larva], p.ind[:KD_h][z], glb[:C_W][z], ind[:D_h][z]) 
         # update hazard rate
         ind.h_z += LL2GUTS(ind.D_h[z], p.ind.E_h[z], p.ind.B_h[z])
     end
@@ -326,7 +342,7 @@ TKTD model with following configuration:
     for z in eachindex(glb.C_W) # for every chemical
         for j in eachindex(ind.y_j) # for every PMoA
             # calculate change in damage
-            du.ind.D_j[z,j] = minimal_TK(ind.embryo, p.ind.KD[z,j], glb.C_W[z], ind.D_j[z,j]) 
+            du.ind.D_j[z,j] = minimal_TK_aquatic(ind[:larva], p.ind.KD[z,j], glb.C_W[z], ind.D_j[z,j]) 
             # update relative response with respect to PMoA j
             # PMoAs with decreasing response
             if j != 2 
@@ -337,7 +353,7 @@ TKTD model with following configuration:
             end
         end
         # calculate change in damage for lethal effects
-        du.ind.D_h[z] = minimal_TK(ind[:embryo], p.ind[:KD_h][z], glb[:C_W][z], ind[:D_h][z]) 
+        du.ind.D_h[z] = minimal_TK_aquatic(ind[:larva], p.ind[:KD_h][z], glb[:C_W][z], ind[:D_h][z]) 
         # update hazard rate
         ind.h_z += LL2GUTS(ind.D_h[z], p.ind.E_h[z], p.ind.B_h[z])
     end

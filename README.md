@@ -108,3 +108,7 @@ The PMoAs have a fixed order in the parameter matrices:
     5. Decrease in maturity threshold for metamorphosis
     6. Increase in maturity threshold for metamorphosis
     7. Decrease in $\kappa$
+
+### v0.3.1
+
+- Connection to `C_W` is now life stage specific: Only larvae are affected by aquatic exposure.
