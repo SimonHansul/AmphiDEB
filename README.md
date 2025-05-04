@@ -116,3 +116,7 @@ The PMoAs have a fixed order in the parameter matrices:
 ### v0.3.2
 
 - bugfix in `TK_minimal_aquatic`
+
+### v0.3.3
+
+- LL2pos has a caveat to catch negative x values

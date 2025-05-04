@@ -243,7 +243,7 @@ end
 end
 
 @inline function LL2pos(x::Float64, p::NTuple{2,Float64})::Float64
-    return 1 - log((1 / (1 + Complex(x / p[1]) ^ p[2])).re)
+    return x >= 0 ? 1 - log((1 / (1 + Complex(x / p[1]) ^ p[2])).re) : 1.
 end
 
 @inline function NEC2pos(x::Float64, p::NTuple{2,Float64})::Float64
