@@ -1,0 +1,5 @@
+[deps]
+AmphiDEB = "eee04faf-3499-4765-a0c5-d172f1a51fe4"
+Documenter = "e30172f5-a6a5-5a46-863b-614d45cd2de4"
+EcotoxSystems = "a070e96f-54e2-4e3c-8571-6208d1dd8981"
+Literate = "98b081ad-f1c9-55d3-8b20-4c87d4299306"

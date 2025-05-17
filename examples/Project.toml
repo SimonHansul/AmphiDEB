@@ -1,0 +1,7 @@
+[deps]
+AmphiDEB = "eee04faf-3499-4765-a0c5-d172f1a51fe4"
+EcotoxSystems = "a070e96f-54e2-4e3c-8571-6208d1dd8981"
+LaTeXStrings = "b964fa9f-0449-5b57-a5c2-d3ea65f4040f"
+Literate = "98b081ad-f1c9-55d3-8b20-4c87d4299306"
+Plots = "91a5bcdd-55d7-5caf-9e0b-520d859cae80"
+StatsPlots = "f3b207a7-027a-5e70-b257-86293d7955fd"
