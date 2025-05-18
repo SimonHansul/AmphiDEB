@@ -108,3 +108,7 @@ The implementation basis for this is [EcotoxSystems.jl](https://github.com/simon
 ### v0.3.3
 
 - LL2pos has a caveat to catch negative x values
+
+### v0.3.4
+
+- Discontinued alt model incl. tests
