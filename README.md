@@ -7,7 +7,19 @@
 
 
 This package implements a Dynamic Energy Budget (DEB) model for amphibians based on DEBkiss. <br>
-The implementation basis for this is [EcotoxSystems.jl](https://github.com/simonhansul/ecotoxsystems.jl).
+The implementation basis for this is [EcotoxSystems.jl](https://github.com/simonhansul/ecotoxsystems.jl), and thus also allows for simulation of population dynamics with an individual-based approach. <br>
+The rule-based component of the model is currently extremely limited, and merely serves as a proof of concept and starting point for future development. <br>
+
+Explicitly **not** within the scope of this package: 
+
+- Routines for model fitting
+- Pre-calibrated models for specific species
+
+
+## Acknowledgements & Funding
+
+The AmphiDEB package was developed as part of the AmphiDEB project, 
+funded by the European Food Safety Authortiy (EFSA).
 
 
 ## Changelog 
@@ -111,4 +123,4 @@ The implementation basis for this is [EcotoxSystems.jl](https://github.com/simon
 
 ### v0.3.4
 
-- Discontinued alt model incl. tests
+- Discontinued alt model incl. tests 
