@@ -62,7 +62,7 @@ Please note that the default parameters are largely arbitrary and do not reflect
 
 | Parameter                  | Default value                    | Comment                                                                 |
 |---------------------------|--------------------------|-------------------------------------------------------------------------|
-| t_max                     | `56.`                    | Maximum simulation time simulation                                                       |
+| t_max                     | `56.`                    | Maximum simulation time                                                       |
 | N0                        | `1.`                     | Number of starting individuals
 | dX_in                     | `[20., 20.]`             | Food input rate [mg d⁻¹], assuming *ad libitum* feeding                |
 | k_V                       | `[0., 0.]`               | Dilution rate in the aquatic medium[d⁻¹]                                |
@@ -116,11 +116,11 @@ Please note that the default parameters are largely arbitrary and do not reflect
 | h_b               | `0.`                             | Background mortality                                                                     |
 | KD                | `[0. 0. 0. 0. 0. 0. 0.;]`         | k_D per PMoA and stressor                                                                |
 | B                 | `[2. 2. 2. 2. 2. 2. 2.;]`         | Slope parameters                                                                         |
-| E                 | `[1e10 1e10 1e10 1e10 1e10 1e10 1e10;]` | Sensitivity thresholds                                                            |
+| E                 | `[1e10 1e10 1e10 1e10 1e10 1e10 1e10;]` | Median effective damage per stressor and PMoA                                                            |
 | KD_h              | `[0.;]`                          | k_D for GUTS-SD module per stressor  |
 | E_h               | `[1e10;]`                        | Sensitivity for GUTS-SD                                                                  |
 | B_h               | `[1.;]`                          | Slope for GUTS-SD                                                                        |
-| C_h               | `[1.;]`                          | Convert response to hazard rate                                                          |
+| C_h               | `[1.;]`                          | Proportionqlity constant to convert larval sublethal response to post-metamorphic hazard rate                                                          |
 | S_rel_crit        | `0.66`                           | Critical relative body mass loss                                                         |
 | h_S               | `0.6`                            | Hazard rate below critical mass                                                          |
 | a_max             | `truncated(Normal(15*365, 1.5*365), 0, Inf)` | Maximum age [d]                                                               |

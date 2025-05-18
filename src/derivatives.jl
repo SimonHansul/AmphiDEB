@@ -23,7 +23,7 @@ end
 """
     AmphiDEB_ODE_with_linear_TD!(du, u, p, t)::Nothing
 
-ODE system with liner toxicodynamics. 
+ODE system with linear toxicodynamics. 
 """
 function AmphiDEB_ODE_with_linear_TD!(du, u, p, t)::Nothing
 
@@ -363,6 +363,15 @@ TKTD model with following configuration:
     return nothing
 end
 
+"""
+    is_embryo(
+        X_emb::Float64;
+        beta::Float64 = 1e3
+        )::Float64
+
+Determine whether an individual is in embryonic state, returning life stage indicator as float. 
+Following rules of the standard DEBkiss model, embryonic state is maintained until the embryonic buffer is emptied (`X_emb_int`=0).
+"""
 @inline function is_embryo(
     X_emb::Float64;
     beta::Float64 = 1e3
@@ -372,6 +381,22 @@ end
 
 end
 
+"""
+    is_larva(
+        X_emb::Float64,
+        H::Float64,
+        H_j1::Float64,
+        y_H_neg::Float64, 
+        y_H_pos::Float64;
+        beta1::Float64 = 1e3,
+        beta2::Float64 = 1e7
+        )::Float64
+
+Determine wheter an individual is in larval state, returning life stage indicator as float. 
+Larvae are all non-embryos whose maturity is below the threshold for metamorphosis `H_j1`. 
+The timing of `H_j1` will often be aligned with Gosner stage 42 for anurans, but might ocurr earlier. 
+The decisive factor is the decline in feeding rates.
+"""
 @inline function is_larva(
     X_emb::Float64,
     H::Float64,
@@ -386,6 +411,20 @@ end
 
 end
 
+"""
+    is_metamorph(
+        H::Float64, 
+        H_j1::Float64, 
+        y_H_neg::Float64,
+        y_H_pos::Float64,
+        E_mt::Float64;
+        beta1::Float64 = 1e7, 
+        beta2::Float64 = 1e3, 
+        )::Float64
+
+Determine wheter an individual is in metamorph state, returning life stage indicator as float.
+Metamorphs have a maturity level above ``H_j1`, and their metamorphic reserve `E_mt` is not emptied yet.
+"""
 @inline function is_metamorph(
     H::Float64, 
     H_j1::Float64, 
@@ -400,6 +439,22 @@ end
 
 end
 
+"""
+    is_juvenile(
+        H::Float64,
+        H_j1::Float64,
+        y_H_neg::Float64,
+        y_H_pos::Float64,
+        E_mt::Float64,
+        H_p::Float64;
+        beta1 = 1e3,
+        beta2 = 1e3,
+        beta3 = 1e3
+        )::Float64
+
+Determine wheter an individual is in juvenile state, returning life stage indicator as float.
+Juveniles are individuals with a maturity level between `H_j1` and `H_p` whose metamorphic reserve `E_mt `has been emptied.
+"""
 @inline function is_juvenile(
     H::Float64,
     H_j1::Float64,
@@ -416,6 +471,16 @@ end
 
 end
 
+"""
+    is_adult(
+        H::Float64,
+        H_p::Float64;
+        beta = 1e3
+        )::Float64
+
+Determine wheter an individual is in adult state, returning life stage indicator as float.
+Adults are individuals with a maturity level above the puberty threshold `H_p`.
+"""
 @inline function is_adult(
     H::Float64,
     H_p::Float64;
@@ -427,6 +492,13 @@ end
 end
 
 
+"""
+    determine_life_stage!(du, u, p, t)::Nothing
+
+
+Determine an individual's current life stages by calculating all life stage indicators. 
+To avoid numerical issues during ODE solve, all life stage transitions are approximated by sigmoid functions.
+"""
 function determine_life_stage!(du, u, p, t)::Nothing
 
     u.ind.embryo = is_embryo(u.ind[:X_emb])
@@ -438,6 +510,20 @@ function determine_life_stage!(du, u, p, t)::Nothing
     return nothing
 end
 
+"""
+    calc_eta_AS(
+        embryo::Float64,
+        larva::Float64,
+        metamorph::Float64,
+        eta_AS_emb::Float64,
+        juvenile::Float64,
+        adult::Float64,
+        eta_AS_juv::Float64
+        )::Float64
+
+Individual's current value of the growth efficiency `eta_AS`, 
+based on life stage indicators and life stage-specific values of `eta_AS`.
+"""
 @inline function calc_eta_AS(
     embryo::Float64,
     larva::Float64,
@@ -467,9 +553,10 @@ end
         y_K::Float64
         )::Float64
 
-Calculate `kappa` accounting for life-stage, temperature effects and chemical effects. 
+Individual's current value of the growth efficiency `kappa`, 
+based on life stage indicators and life stage-specific values of `kappa`.
 
-Temperature effects are implemented according to Romoli et al. (2024).
+This includes temperature effects on κ as in Romoli et al. (2024).
 """
 @inline function calc_kappa(
     embryo::Float64,
@@ -494,9 +581,7 @@ end
 """
     life_stage_and_plasticity_effects(du, u, p, t)::Tuple{Float64,Float64}
 
-Handles life-stage specificity of parameters. 
-The parameter notation foresees that the superscript indicates the first life stage for which a value is valid,
-e.g. if we have eta_AS_emb and eta_AS_juv, then eta_AS_emb is applied for eymbros, larvae and metamorphs, and eta_AS_juv is applied for juveniles and adults
+Life-stage specificity of parameters., as well as plastic responses to environmental factors (e.g. effect of temperature on κ).
 """
 function life_stage_and_plasticity_effects(du, u, p, t)::Tuple{Float64,Float64}
 
@@ -513,11 +598,7 @@ end
         T::Float64
         )::Float64
 
-Calculates temperature correction coefficient `y_T` according to Arrhenius equation.
-
-- `T_A` : Arrhenius temperature (K)
-- `T_ref` : Reference temperature (K)
-- `T` : Current ambient temperature
+Temperature correction coefficient `y_T` according to Arrhenius equation.
 """
 @inline function y_T(
     T_A::Float64,
@@ -538,6 +619,15 @@ function Arrhenius!(du, u, p, t)::Nothing
 end
 
 
+"""
+    f_X(
+        X::Float64,
+        V_patch::Float64,
+        K_X::Float64
+        )::Float64
+
+Scaled functional response `f_X` based on Holling Type II functional response.
+"""
 @inline function f_X(
     X::Float64,
     V_patch::Float64,
@@ -549,6 +639,20 @@ end
 end
 
 
+"""
+    f_X(
+        larva::Float64,
+        metamorph::Float64, 
+        juvenile::Float64, 
+        adult::Float64,
+        X::Vector{Float64},
+        V_patch::Union{Vector{Real},Vector{Float64}}, 
+        K_X_lrv::Float64,
+        K_X_juv::Float64
+        )::Float64
+
+Scaled functional response with account for life stage-specific half saturation cosntant `K_X`.
+"""
 @inline function f_X(
     larva::Float64,
     metamorph::Float64, 
@@ -565,6 +669,16 @@ end
 
 end
 
+"""
+    calc_dI_emb(
+        embryo::Float64,
+        S::Float64,
+        dI_max_emb::Float64,
+        y_T::Float64
+        )::Float64
+
+Embryonic buffer uptake rate for embryos.
+"""
 @inline function calc_dI_emb(
     embryo::Float64,
     S::Float64,
@@ -576,6 +690,19 @@ end
     
 end
 
+"""
+    calc_dI_mt(
+        metamorph::Float64,
+        f_X::Float64,
+        dI_max_lrv::Float64,
+        E_mt::Float64,
+        E_mt_max::Float64,
+        S::Float64,
+        y_T::Float64
+        )::Float64
+
+Residual ingestion rate for metamorphs (if any). 
+"""
 @inline function calc_dI_mt(
     metamorph::Float64,
     f_X::Float64,
@@ -590,6 +717,18 @@ end
 
 end
 
+"""
+    calc_dI_lrv(
+        larva::Float64,
+        f_X::Float64,
+        dI_max_lrv::Float64,
+        S::Float64,
+        y_T::Float64,
+        )::Float64
+
+
+Food ingestion rate for larvae. 
+"""
 @inline function calc_dI_lrv(
     larva::Float64,
     f_X::Float64,
@@ -602,6 +741,18 @@ end
 
 end
 
+"""
+    calc_dI_juv(
+        juvenile::Float64,
+        adult::Float64,
+        f_X::Float64,
+        dI_max_juv::Float64,
+        S::Float64,
+        y_T::Float64
+        )::Float64
+
+Food ingestion rate for juveniles and adults.
+"""
 @inline function calc_dI_juv(
     juvenile::Float64,
     adult::Float64,
@@ -615,6 +766,16 @@ end
 
 end
 
+"""
+    dI(
+        dI_emb::Float64,
+        dI_mt::Float64, 
+        dI_lrv::Float64, 
+        dI_juv_ad::Float64
+        )::Float64
+
+Food ingestion rate with account for life stage-specificity.
+"""
 @inline function dI(
     dI_emb::Float64,
     dI_mt::Float64, 
@@ -626,6 +787,16 @@ end
 
 end
 
+"""
+    dA(
+        dI::Float64, 
+        eta_IA::Float64, 
+        y_A::Float64, 
+        y_AP::Float64
+        )::Float64
+
+Assimilation flux, following standard DEBkiss model.
+"""
 @inline function dA(
     dI::Float64, 
     eta_IA::Float64, 
@@ -637,13 +808,6 @@ end
 
 end
 
-"""
-    ingestion!(du, u, p, t)::Nothing
-
-Life stage-specific calculation of ingestion rate for amphibians. <br>
-Note that this function requires all components to be included in the arguments `du`, `u` and `p`, so that we can access the external food concentration. <br>
-Hence, we have `u.ind`, `u.glb`, `p.ind`, etc., instead of simply `u` and `p`.
-"""
 function ingestion!(du, u, p, t)::Nothing
 
     u.ind.f_X = f_X(u.ind[:larva], u.ind[:metamorph], u.ind[:juvenile], u.ind[:adult], u.glb[:X], p.glb[:V_patch], p.ind[:K_X_lrv], p.ind[:K_X_juv])
@@ -664,6 +828,19 @@ function ingestion!(du, u, p, t)::Nothing
     return nothing 
 end
 
+"""
+    determine_k_M(
+        embryo::Float64,
+        larva::Float64,
+        metamorph::Float64,
+        k_M_emb::Float64,
+        juvenile::Float64,
+        adult::Float64,
+        k_M_juv::Float64
+        )::Float64
+
+Current value of `k_M`, depending on life stage.
+"""
 @inline function determine_k_M(
     embryo::Float64,
     larva::Float64,
@@ -678,6 +855,19 @@ end
 
 end
 
+"""
+    determine_k_J(
+        embryo::Float64,
+        larva::Float64,
+        metamorph::Float64,
+        k_J_emb::Float64,
+        juvenile::Float64,
+        adult::Float64,
+        k_J_juv::Float64
+        )::Float64
+
+Current value of `k_J`, depending on life stage.
+"""
 @inline function determine_k_J(
     embryo::Float64,
     larva::Float64,
@@ -692,6 +882,19 @@ end
 
 end
 
+
+"""
+    dM(
+        S::Float64,
+        k_M::Float64,
+        y_M::Float64,
+        y_MP::Float64,
+        y_T::Float64
+        )::Float64
+
+Somatic maintenance rate, 
+including response to chemicals (`y_M`), pathogens (`y_MP`) and temperature (`y_T`).
+"""
 @inline function dM(
     S::Float64,
     k_M::Float64,
@@ -704,6 +907,18 @@ end
 
 end
 
+"""
+    dM(
+        S::Float64,
+        k_M::Float64,
+        y_M::Float64,
+        y_MP::Float64,
+        y_T::Float64
+        )::Float64
+
+Maturity maintenance rates, 
+including response to chemicals (`y_M`), pathogens (`y_MP`) and temperature (`y_T`).
+"""
 @inline function dJ(
     H::Float64,
     k_J::Float64,
@@ -716,11 +931,7 @@ end
 
 end
 
-"""
-    maintenance!(du, u, p, t)::Nothing 
 
-Calculation of maintenance fluxes for amphibians.
-"""
 function maintenance!(du, u, p, t)::Nothing 
 
     k_M = determine_k_M(u.ind[:embryo], u.ind[:larva], u.ind[:metamorph], p.ind[:k_M_emb], u.ind[:juvenile], u.ind[:adult], p.ind[:k_M_juv])   
@@ -732,6 +943,19 @@ function maintenance!(du, u, p, t)::Nothing
     return nothing
 end
 
+"""
+    dR(
+        adult::Float64,
+        eta_AR::Float64,
+        y_R::Float64,
+        y_RP::Float64,
+        kappa::Float64,
+        dA::Float64,
+        dJ::Float64
+        )::Float64
+
+Reproduction rate, including response to chemicals `y_R` and pathogens (`y_RP`).
+"""
 @inline function dR(
     adult::Float64,
     eta_AR::Float64,
@@ -753,6 +977,20 @@ function reproduction!(du, u, p, t, kappa::Float64)::Nothing
     return nothing
 end
 
+"""
+    calc_dS_emb_juv_ad(
+        kappa::Float64,
+        dA::Float64,
+        dM::Float64,
+        eta_SA::Float64,
+        y_G::Float64,
+        y_GP::Float64,
+        eta_AS::Float64
+        )::Float64
+
+Somatic growth rate for embryos, juveniles and adults, 
+including response to chemicals (`y_G`) and pathogens (`y_GP`).
+"""
 @inline function calc_dS_emb_juv_ad(
     kappa::Float64,
     dA::Float64,
@@ -772,6 +1010,22 @@ end
 
 end
 
+"""
+    calc_dS_lrv(
+        kappa::Float64,
+        dA::Float64,
+        dM::Float64,
+        eta_SA::Float64,
+        gamma::Float64,
+        eta_AS::Float64,
+        y_G::Float64,
+        y_GP::Float64
+        )::Float64
+
+Somatic growth rate for larvae. 
+Approach follows DEBkiss model, but with an additional γ-split to divert assimilates towards the metamorphic reserve. 
+This is also taken into account in the shrinking equation (`kappa * dA < dM`).
+"""
 @inline function calc_dS_lrv(
     kappa::Float64,
     dA::Float64,
@@ -790,6 +1044,17 @@ end
     end
 end
 
+"""
+    calc_dS_mt(
+        metamorph::Float64,
+        eta_AS::Float64,
+        y_G::Float64,
+        y_GP::Float64,
+        dA::Float64
+        )::Float64
+
+Somatic growth rate for metamorphs. 
+"""
 @inline function calc_dS_mt(
     metamorph::Float64,
     eta_AS::Float64,
@@ -802,6 +1067,21 @@ end
 
 end
 
+
+"""
+    dS(
+        embryo::Float64,
+        juvenile::Float64,
+        adult::Float64,
+        dS_emb_juv_ad::Float64,
+        larva::Float64,
+        dS_lrv::Float64,
+        metamorph::Float64,
+        dS_mt::Float64
+        )::Float64
+
+Life stage-specific somatic growth rate.
+"""
 @inline function dS(
     embryo::Float64,
     juvenile::Float64,
@@ -817,11 +1097,6 @@ end
 
 end
 
-"""
-    growth!(du, u, p, t)
-
-Calculation of life stage-specific growth fluxes for amphibians. <br>
-"""
 function growth!(du, u, p, t, eta_AS::Float64, kappa::Float64)::Nothing
     
     dS_emb_juv_ad = calc_dS_emb_juv_ad(kappa, du.ind[:A], du.ind[:M], p.ind[:eta_SA], u.ind[:y_j][1], u.ind[:y_jP][1], eta_AS)
@@ -833,7 +1108,19 @@ function growth!(du, u, p, t, eta_AS::Float64, kappa::Float64)::Nothing
     return nothing
 end 
 
-# metamorphic reserve dynamics for larvae
+"""
+    calc_dE_mt_lrv(
+        eta_AS::Float64, 
+        y_G::Float64,
+        y_G_P::Float64,
+        gamma::Float64,
+        kappa::Float64,
+        dA::Float64,
+        dM::Float64
+        )::Float64
+
+Accumulation of metamorphic reserve by larvae.
+"""
 @inline function calc_dE_mt_lrv(
     eta_AS::Float64, 
     y_G::Float64,
@@ -848,7 +1135,15 @@ end
 
 end
 
-# metamorphic reserve dynamics for metamorphs
+"""
+    calc_dE_mt_mt(
+        dH::Float64,
+        dJ::Float64,
+        dM::Float64
+        )::Float64
+
+Depletion of metamorphic reserve by metamorphs.
+"""
 @inline function calc_dE_mt_mt(
     dH::Float64,
     dJ::Float64,
@@ -859,7 +1154,16 @@ end
 
 end
 
-# metamorphic reserve dynamics for any life stage
+"""
+    dE_mt(
+        larva::Float64,
+        dE_mt_lrv::Float64,
+        metamorph::Float64,
+        dE_mt_mt::Float64
+        )::Float64
+
+Life stage-specific dynamics of the metamorphic reserve.
+"""
 @inline function dE_mt(
     larva::Float64,
     dE_mt_lrv::Float64,
@@ -871,7 +1175,14 @@ end
 
 end
 
-# tracking maximum reserve level
+"""
+    dE_mt_max(
+        larva::Float64,
+        dE_mt::Float64
+        )::Float64
+
+Function to record the maximum metamorphic reserve level, reached at the transition from larva to metamorph.
+"""
 @inline function dE_mt_max(
     larva::Float64,
     dE_mt::Float64
@@ -881,12 +1192,6 @@ end
 
 end
 
-"""
-    metamorphic_reserve!(du, u, p, t, kappa)::Nothing
-
-Calculation of metamorphic reserve dynamics for amphibians. <br>
-Metamorphic reserve is accumulated during larval development and depleted during metamorphic climax. 
-"""
 function metamorphic_reserve!(du, u, p, t, eta_AS::Float64, kappa::Float64)::Nothing
     
     dE_mt_lrv = calc_dE_mt_lrv(p.ind[:eta_AS_emb], u.ind[:y_j][1], u.ind[:y_jP][1], p.ind[:gamma], kappa, du.ind[:A], du.ind[:M]) 
@@ -897,6 +1202,15 @@ function metamorphic_reserve!(du, u, p, t, eta_AS::Float64, kappa::Float64)::Not
     return nothing
 end
 
+"""
+    calc_dH(
+        kappa::Float64,
+        dA::Float64,
+        dJ::Float64
+        )::Float64
+
+Maturation rate following standard DEBkiss model.
+"""
 @inline function calc_dH(
     kappa::Float64,
     dA::Float64,
@@ -907,6 +1221,15 @@ end
 
 end
 
+"""
+    calc_dH_mt(
+        kappa::Float64,
+        dM::Float64,
+        dJ::Float64
+        )::Float64
+
+Maturation rate for metamorphs, calculated from the κ-rule and assuming that soma are decoupled from the κ rule during metamorphosis.
+"""
 @inline function calc_dH_mt(
     kappa::Float64,
     dM::Float64,
@@ -917,6 +1240,16 @@ end
 
 end
 
+"""
+    dH(
+        adult::Float64,
+        metamorph::Float64,
+        dH::Float64,
+        dH_mt::Float64
+        )::Float64
+
+Life stage-specific maturation rate.
+"""
 @inline function dH(
     adult::Float64,
     metamorph::Float64,
@@ -927,11 +1260,6 @@ end
     return (1 - adult) * (1 - metamorph) * dH + metamorph * dH_mt
 end
 
-"""
-    maturation!(du, u, p, t, kappa)::Nothing
-
-Calculation of maturation fluxes for amphibians.
-"""
 function maturation!(du, u, p, t, kappa::Float64)::Nothing
 
     # maturation follows kappa-rule for all but metamorphs
