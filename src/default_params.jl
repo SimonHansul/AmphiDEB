@@ -1,7 +1,6 @@
 """
 AmphiDEB global parameters with defaults.
 """
-
 glb = ComponentVector(
     t_max = 56., # 8 - week simulation
     N0 = 1., # start with single value [] - only possible setting for ODE_simulator
@@ -22,8 +21,6 @@ Default species-specific parameters. <br>
 Values reported by Pfab et al. (2020) are taken as defaults when available. <br>
 Parameters not reported by Pfab et al. are set to defaults from the DEBkiss book (Jager, 2022). <br>
 Remaining parameters are ingestion rates, maturity thresholds, aging and starvation - these are guessed, sometimes with reference to additional literature.  
-
-
 
 Individual variability can be induced in any parameter by defining it as a distribution.
 By default, we use the zoom factor `Z`, which is here defined as the ratio between maximum structural masses of two organsims.
@@ -114,8 +111,6 @@ spc = ComponentVector(
     #=
     TKTD parameters    
     =#
-    
-    drcmodel_sublethal = 1, # 1 = log-logistic, 2 = linear with threshold
 
     h_b = 0., # background mortality
     
