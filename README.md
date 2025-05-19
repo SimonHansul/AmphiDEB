@@ -123,4 +123,4 @@ funded by the European Food Safety Authortiy (EFSA).
 
 ### v0.3.4
 
-- Discontinued alt model incl. tests 
+- Discontinued alternative model incl. tests 

@@ -58,9 +58,10 @@ end
 """ 
     Amphibian_DEB!(du, u, p, t)::Nothing
 
+Definition of the amphibian DEB model (without TKTD).
+
 The default amphibian DEB model assumes a metamorphic reserve compartment,
 which is accumulated during larval development, and depleted during metamorphosis. 
-During metamorphosis, ingestion rate decreases gradually and reaches 0 at the end of metamorphosis.
 """
 function Amphibian_DEB!(du, u, p, t)::Nothing
 
@@ -94,6 +95,14 @@ function effect_renewal!(integrator)
 end
 
 # function to generate define all callbacks in a single CallbackSet
+"""
+    AmphODE_callbacks()
+
+This function generates a default set of callbacks, i.e. discrete events. 
+
+To simulate custom events, one can write a modified version of this function and provide its output as keyword argument `callbacks` 
+to `ODE_simulator`. 
+"""
 function AmphODE_callbacks()
 
     cb_inoculation = ContinuousCallback(condition_inoculation, effect_inoculation!)
@@ -125,7 +134,8 @@ end
 """
     temperature_sinusoidal(t::Float64, T_max::Float64, T_min::Float64, t_peak ::Float64)::Float64
 
-Calculate seasonal fluctuations in temperature from a sinusoidal function. 
+Calculate seasonal fluctuations in temperature from a sinusoidal function.
+Currently not included in the default model.
 """
 @inline function temperature_sinusoidal(t::Float64, T_mean::Float64, T_amp::Float64, T_phi::Float64)::Float64
 
@@ -133,6 +143,19 @@ Calculate seasonal fluctuations in temperature from a sinusoidal function.
 
 end
 
+"""
+    dX(
+        dX_in::Float64, 
+        k_V::Float64, 
+        X::Float64
+        )::Float64
+
+Change in external resource abundace `X`. 
+
+- `dX_in`: Resource input rate [m/t]
+- `k_V`: Resource dilution or mortality rate [1/d]
+- `X`: Resource abundance [m]
+"""
 @inline function dX(
     dX_in::Float64, 
     k_V::Float64, 
@@ -151,10 +174,8 @@ end
 
 Derivative of the zoospore abundance `P_Z`. 
 
-This function does not take changes in zoopsore abundance due to infection into account. 
+Note that this function does not take changes in zoopsore abundance due to encystem into account. 
 This is handled in `Pathogen_Infection!`.
-
-args: 
 
 - `mu`: Zoospore background mortality rate
 - `P`_Z`: Current zoospore abundance in the environment
@@ -191,6 +212,7 @@ end
         )::Float64
 
 Derivative of the individual-specific sporangia abundace `P_S`.
+See [Drawert et al (2017)](https://royalsocietypublishing.org/doi/full/10.1098/rsif.2017.0480) for details on parameters and model formulation.
 """
 @inline function dP_S(
     v0::Float64,
@@ -272,7 +294,7 @@ end
         )::Float64
 
 Minimal TK model (no feedbacks) for aquatic exposure. 
-Only applies to larvae.
+Aquatic exposure is 0 for non-larvae.
 """
 @inline function minimal_TK_aquatic(
     larva::Float64,
@@ -288,10 +310,7 @@ end
 """
     TKTD_LL2!(du, u, p, t)::Nothing
 
-TKTD model with following configuration: 
-
-- Mixture toxicity based on independent action (IA)
-- Log-logistic relationship between damage and metabolic processes
+TKTD module with log-logistic dose-response. 
 """
 @inline function TKTD_LL2!(du, u, p, t)::Nothing
     
@@ -327,10 +346,7 @@ end
 """
     TKTD_linear!(du, u, p, t)::Nothing
 
-TKTD model with following configuration: 
-
-- Mixture toxicity based on independent action (IA)
-- Linear-above-threshold relationship between damage and metabolic processes (the default DEBtox stress function)
+TKTD module with linear dose-response.
 """
 @inline function TKTD_linear!(du, u, p, t)::Nothing
 

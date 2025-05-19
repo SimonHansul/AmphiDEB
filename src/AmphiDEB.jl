@@ -14,17 +14,15 @@ using StatsBase
 
 include("default_params.jl") # default parameter sets
 include("derivatives.jl") # derivatives of the default model
-include("derivatives_alt.jl") # derivatives of model variant M2 (E_mt as sub-component of structure) 
 include("statevars.jl") # setting up state variables
-include("individual_rules.jl")
-include("global_rules.jl")
-include("simulators.jl") # running simulations
+include("individual_rules.jl") # individual rule-based component
+include("global_rules.jl") # global rule-based component
+include("simulators.jl") # functions to run run simulations
 
 include("traits.jl") # functions to infer traits from parameters or simulation output (e.g. maximum size, age at birth, etc.)
 include("utils.jl") # various auxiliary functions
-export plot_statevars
 
-# precompilation
+# to precompile the model, we simulate the default parameters
 @compile_workload begin
     p = deepcopy(defaultparams)
 
@@ -36,6 +34,5 @@ export plot_statevars
     
     sim = IBM_simulator(p)
 end
-
 
 end # module AmphiDEB
