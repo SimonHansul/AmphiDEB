@@ -1,19 +1,16 @@
-# derivatives.jl
-# model functions which are used by all models
-
-## alternative model configurations
+# derivatives_M1.jl
 
 
 """
-    AmphiDEB_ODE_with_loglogistic_TD!(du, u, p, t)::Nothing
+    M1_complete_ODE_with_loglogistic_TD!(du, u, p, t)::Nothing
 
 ODE system with log-logistic toxicodynamics. 
 """
-function AmphiDEB_ODE_with_loglogistic_TD!(du, u, p, t)::Nothing
+function M1_complete_ODE_with_loglogistic_TD!(du, u, p, t)::Nothing
 
     AmphiDEB_global!(du, u, p, t)
     Pathogen_growth!(du, u, p, t)
-    AmphiDEB_individual_ODE_with_loglogistic_TD!(du, u, p, t)
+    M1_individual_ODE_with_loglogistic_TD!(du, u, p, t)
 
     return nothing
 end
@@ -21,35 +18,35 @@ end
 # linear toxicodynamics (classic "DEBtox" stress function)
 
 """
-    AmphiDEB_ODE_with_linear_TD!(du, u, p, t)::Nothing
+    M1_complete_ODE_with_linear_TD!(du, u, p, t)::Nothing
 
 ODE system with linear toxicodynamics. 
 """
-function AmphiDEB_ODE_with_linear_TD!(du, u, p, t)::Nothing
+function M1_complete_ODE_with_linear_TD!(du, u, p, t)::Nothing
 
     AmphiDEB_global!(du, u, p, t)
     Pathogen_growth!(du, u, p, t)
-    AmphiDEB_individual_ODE_with_linear_TD!(du, u, p, t)
+    M1_individual_ODE_with_linear_TD!(du, u, p, t)
 
     return nothing
 end
 
 ### individual-level ODE configurations
 
-function AmphiDEB_individual_ODE_with_loglogistic_TD!(du, u, p, t)::Nothing
+function M1_individual_ODE_with_loglogistic_TD!(du, u, p, t)::Nothing
 
     TKTD_LL2!(du, u, p, t) # TKTD with mixtures assuming IA
     Pathogen_Infection!(du, u, p, t) # infection, release of zoospores and relative response to sporangia density
-    Amphibian_DEB!(du, u, p, t) # Amphibian DEB model
+    M1_DEB!(du, u, p, t) # Amphibian DEB model
 
     return nothing
 end
 
-function AmphiDEB_individual_ODE_with_linear_TD!(du, u, p, t)::Nothing
+function M1_individual_ODE_with_linear_TD!(du, u, p, t)::Nothing
 
     TKTD_linear!(du, u, p, t) # TKTD with mixtures assuming IA
     Pathogen_Infection!(du, u, p, t) # infection, release of zoospores and relative response to sporangia density
-    Amphibian_DEB!(du, u, p, t) # Amphibian DEB mode
+    M1_DEB!(du, u, p, t) # Amphibian DEB mode
 
     return nothing
 
@@ -58,22 +55,22 @@ end
 """ 
     Amphibian_DEB!(du, u, p, t)::Nothing
 
-Definition of the amphibian DEB model (without TKTD).
+Definition of the amphibian DEB model M1 (without TKTD).
 
 The default amphibian DEB model assumes a metamorphic reserve compartment,
 which is accumulated during larval development, and depleted during metamorphosis. 
 """
-function Amphibian_DEB!(du, u, p, t)::Nothing
+function M1_DEB!(du, u, p, t)::Nothing
 
     determine_life_stage!(du, u, p, t)
     Arrhenius!(du, u, p, t)
     eta_AS, kappa = life_stage_and_plasticity_effects(du, u, p, t)
 
-    ingestion!(du, u, p, t)
+    M1_ingestion!(du, u, p, t)
     maintenance!(du, u, p, t)
     growth!(du, u, p, t, eta_AS, kappa)
     maturation!(du, u, p, t, kappa)
-    metamorphic_reserve!(du, u, p, t, eta_AS, kappa)
+    M1_metamorphic_reserve!(du, u, p, t, eta_AS, kappa)
 
     reproduction!(du, u, p, t, kappa)
 
@@ -824,7 +821,7 @@ Assimilation flux, following standard DEBkiss model.
 
 end
 
-function ingestion!(du, u, p, t)::Nothing
+function M1_ingestion!(du, u, p, t)::Nothing
 
     u.ind.f_X = f_X(u.ind[:larva], u.ind[:metamorph], u.ind[:juvenile], u.ind[:adult], u.glb[:X], p.glb[:V_patch], p.ind[:K_X_lrv], p.ind[:K_X_juv])
 
@@ -1132,10 +1129,21 @@ end
         gamma::Float64,
         kappa::Float64,
         dA::Float64,
-        dM::Float64
+        dM::Float64,
+        delta_E::Float64
         )::Float64
 
 Accumulation of metamorphic reserve by larvae.
+
+## Arguments
+
+- `eta_AS`: growth efficiency
+- `y_G`: relative response of growth efficiency to chemical stressors
+- `y_G_P`: relative response of growth effficiency to pathogens
+- `gamma`: allocation to metamorphic reserve
+- `kappa`: allocation to soma incl. metamorphic reserve
+- `dA`: assimilation rate
+- `dM`: maintenance rate
 """
 @inline function calc_dE_mt_lrv(
     eta_AS::Float64, 
@@ -1147,8 +1155,11 @@ Accumulation of metamorphic reserve by larvae.
     dM::Float64
     )::Float64
 
-    return eta_AS * y_G * y_G_P * gamma * (kappa * dA - dM)
-
+    if (kappa * dA) > dM
+        return eta_AS * y_G * y_G_P * gamma * (kappa * dA - dM)
+    else
+        return -(dM / eta_SA - (1 - gamma) * kappa * dA)/delta_E
+    end
 end
 
 """
@@ -1163,10 +1174,11 @@ Depletion of metamorphic reserve by metamorphs.
 @inline function calc_dE_mt_mt(
     dH::Float64,
     dJ::Float64,
-    dM::Float64
+    dM::Float64,
+    delta_E::Float64
     )::Float64
 
-    return -(dH + dJ + dM)
+    return -(dH + dJ + dM)/delta_E
 
 end
 
@@ -1208,7 +1220,7 @@ Function to record the maximum metamorphic reserve level, reached at the transit
 
 end
 
-function metamorphic_reserve!(du, u, p, t, eta_AS::Float64, kappa::Float64)::Nothing
+function M1_metamorphic_reserve!(du, u, p, t, eta_AS::Float64, kappa::Float64)::Nothing
     
     dE_mt_lrv = calc_dE_mt_lrv(p.ind[:eta_AS_emb], u.ind[:y_j][1], u.ind[:y_jP][1], p.ind[:gamma], kappa, du.ind[:A], du.ind[:M]) 
     dE_mt_mt = calc_dE_mt_mt(du.ind[:H], du.ind[:J], du.ind[:M])

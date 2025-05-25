@@ -15,6 +15,22 @@ Explicitly **not** within the scope of this package:
 - Routines for model fitting
 - Pre-calibrated models for specific species
 
+## Model variants
+
+### M1 
+
+This is the default **to maintain backwards compatability with external repositories**. 
+
+- Larvae build up reserves at rate $\gamma \kappa \dot{A} - \dot{M}$
+- Metamorphs deplete reserve at rate $-(\dot{M} + \dot{H} + \dot{J})$ (the obligatory fluxes)
+- Metamorphs are allowed to have a residual food ingestion flux $\dot{I}^{mt} \propto \dfrac{E^{mt}{E^{mt}_{max}}}$, which decreases rapidly as reserve is depleted and is used to build fuel structure (a facultative flux)
+
+### M2
+
+- Larval stage identical to M1
+- Feeding rate for metamorphs immediately drops to 0
+- Correction factor $\delta_E$ allows for a higher yield of maintenance costs and maturation on larval reserves, accounting for potentially higher energy density of the mobilized reserves
+
 
 ## Acknowledgements & Funding
 
