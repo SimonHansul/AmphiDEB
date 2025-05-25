@@ -12,7 +12,7 @@ for application with the AmphiDEB model.
 """
 function ODE_simulator(
     p::ComponentVector; 
-    model = M1_ODE_with_loglogistic_TD!, 
+    model = M1_complete_ODE_with_loglogistic_TD!, 
     callbacks = AmphODE_callbacks(), 
     statevars_init = initialize_statevars,
     gen_ind_params = p -> EcotoxSystems.generate_individual_params(p; pth = p.pth),

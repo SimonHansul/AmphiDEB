@@ -13,7 +13,8 @@ using OrdinaryDiffEq
 using StatsBase
 
 include("default_params.jl") # default parameter sets
-include("derivatives.jl") # derivatives of the default model
+include("derivatives_M1.jl") # derivatives of the default model
+include("derivatives_M2.jl") # derivatives of the default model
 include("statevars.jl") # setting up state variables
 include("individual_rules.jl") # individual rule-based component
 include("global_rules.jl") # global rule-based component

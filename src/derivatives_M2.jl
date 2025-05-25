@@ -92,8 +92,8 @@ end
 
 function M2_metamorphic_reserve!(du, u, p, t, eta_AS::Float64, kappa::Float64)::Nothing
     
-    dE_mt_lrv = calc_dE_mt_lrv(p.ind[:eta_AS_emb], u.ind[:y_j][1], u.ind[:y_jP][1], p.ind[:gamma], kappa, du.ind[:A], du.ind[:M]) 
-    dE_mt_mt = M2_calc_dE_mt_mt(du.ind[:H], du.ind[:J], du.ind[:M])
+    dE_mt_lrv = calc_dE_mt_lrv(p.ind[:eta_AS_emb], u.ind[:y_j][1], u.ind[:y_jP][1], p.ind[:gamma], kappa, du.ind[:A], du.ind[:M], p.ind[:eta_SA], p.ind[:delta_E]) 
+    dE_mt_mt = M2_calc_dE_mt_mt(du.ind[:H], du.ind[:J], du.ind[:M], p.ind[:delta_E])
     du.ind.E_mt = dE_mt(u.ind[:larva], dE_mt_lrv, u.ind[:metamorph], dE_mt_mt)
     du.ind.E_mt_max = dE_mt_max(u.ind[:larva], du.ind[:E_mt])
 

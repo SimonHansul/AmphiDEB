@@ -1130,10 +1130,15 @@ end
         kappa::Float64,
         dA::Float64,
         dM::Float64,
-        delta_E::Float64
+        eta_SA::Float64
+        delta_E::Float64,
         )::Float64
 
 Accumulation of metamorphic reserve by larvae.
+
+>[!Note] Why is the growth and shrinking efficiency applied to the reserve? 
+>The main reason are the implied effects of chemical stressors when the PMoA is a decrease in growth efficiency. 
+>If the growth efficiency only affects structure, the effect on total dry mass is miniscule since reserve accumulation will only be indirectly affected.
 
 ## Arguments
 
@@ -1144,6 +1149,8 @@ Accumulation of metamorphic reserve by larvae.
 - `kappa`: allocation to soma incl. metamorphic reserve
 - `dA`: assimilation rate
 - `dM`: maintenance rate
+- `eta_SA`: shrinking efficiency
+- `delta_E`: energy density of metamorphic reserve, relative to structure
 """
 @inline function calc_dE_mt_lrv(
     eta_AS::Float64, 
@@ -1152,7 +1159,9 @@ Accumulation of metamorphic reserve by larvae.
     gamma::Float64,
     kappa::Float64,
     dA::Float64,
-    dM::Float64
+    dM::Float64,
+    eta_SA::Float64,
+    delta_E::Float64
     )::Float64
 
     if (kappa * dA) > dM
@@ -1167,6 +1176,7 @@ end
         dH::Float64,
         dJ::Float64,
         dM::Float64
+        delta_E::Float64
         )::Float64
 
 Depletion of metamorphic reserve by metamorphs.
@@ -1222,8 +1232,8 @@ end
 
 function M1_metamorphic_reserve!(du, u, p, t, eta_AS::Float64, kappa::Float64)::Nothing
     
-    dE_mt_lrv = calc_dE_mt_lrv(p.ind[:eta_AS_emb], u.ind[:y_j][1], u.ind[:y_jP][1], p.ind[:gamma], kappa, du.ind[:A], du.ind[:M]) 
-    dE_mt_mt = calc_dE_mt_mt(du.ind[:H], du.ind[:J], du.ind[:M])
+    dE_mt_lrv = calc_dE_mt_lrv(p.ind[:eta_AS_emb], u.ind[:y_j][1], u.ind[:y_jP][1], p.ind[:gamma], kappa, du.ind[:A], du.ind[:M], p.ind[:eta_SA], p.ind[:delta_E]) 
+    dE_mt_mt = calc_dE_mt_mt(du.ind[:H], du.ind[:J], du.ind[:M], p.ind[:delta_E])
     du.ind.E_mt = dE_mt(u.ind[:larva], dE_mt_lrv, u.ind[:metamorph], dE_mt_mt)
     du.ind.E_mt_max = dE_mt_max(u.ind[:larva], du.ind[:E_mt])
 
