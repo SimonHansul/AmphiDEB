@@ -12,7 +12,7 @@ for application with the AmphiDEB model.
 """
 function ODE_simulator(
     p::ComponentVector; 
-    model = AmphiDEB_ODE_with_loglogistic_TD!, 
+    model = M1_ODE_with_loglogistic_TD!, 
     callbacks = AmphODE_callbacks(), 
     statevars_init = initialize_statevars,
     gen_ind_params = p -> EcotoxSystems.generate_individual_params(p; pth = p.pth),
@@ -39,7 +39,7 @@ end
         global_rules! = AmphiDEB_global_rules!,
         
         init_individual_statevars = initialize_individual_statevars,
-        individual_ode! = AmphiDEB_individual_ODE_with_loglogistic_TD!, 
+        individual_ode! = M1_individual_ODE_with_loglogistic_TD!, 
         individual_rules! = default_individual_rules!,
         gen_ind_params = p -> EcotoxSystems.generate_individual_params(p; pth = p.pth),
 
@@ -81,7 +81,7 @@ function IBM_simulator(
     
     # default individual model
     init_individual_statevars = initialize_individual_statevars,
-    individual_ode! = AmphiDEB_individual_ODE_with_loglogistic_TD!, 
+    individual_ode! = M1_individual_ODE_with_loglogistic_TD!, 
     individual_rules! = default_individual_rules!,
     gen_ind_params = p -> EcotoxSystems.generate_individual_params(p; pth = p.pth),
 

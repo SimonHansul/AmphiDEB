@@ -140,3 +140,10 @@ funded by the European Food Safety Authortiy (EFSA).
 ### v0.3.4
 
 - Discontinued alternative model incl. tests 
+
+### v0.3.5
+
+- New alternative models:
+    - M1: metamorphic reserve + residual ingestion flux 
+    - M2: metamorphoc reserve without residual ingestion flux
+    - Both model versions include a parameter `delta_E` that allows for higher yield of maintenance and maturation on reserves
