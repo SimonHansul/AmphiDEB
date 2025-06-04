@@ -21,9 +21,9 @@ Explicitly **not** within the scope of this package:
 
 This is the default. All analyses in the AmphiDEB project are as of now (2025-06-04) based on this model. 
 
-- Larvae build up reserves at rate $\gamma \kappa \dot{A} - \dot{M}$
+- Larvae build up reserves at rate $\gamma (\kappa \dot{A} - \dot{M})$
 - Metamorphs deplete reserve at rate $-(\dot{M} + \dot{H} + \dot{J})$ (the obligatory fluxes)
-- Metamorphs are allowed to have a residual food ingestion flux $\dot{I}^{mt} \propto \dfrac{E^{mt}}{E^{mt}_{max}}$, which decreases rapidly as reserve is depleted and is used to build fuel structure (a facultative flux)
+- Metamorphs are allowed to have a residual food ingestion flux $\dot{I}^{mt} \propto \dfrac{E^{mt}}{E^{mt}_{max}}$, which decreases as reserve is depleted. The residual assimilation flux is exclusively used to build new structure.
 
 ### M2
 
