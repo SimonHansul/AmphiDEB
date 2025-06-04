@@ -19,7 +19,7 @@ Explicitly **not** within the scope of this package:
 
 ### M1 
 
-This is the default **to maintain backwards compatability with external repositories**. 
+This is the default. All analyses in the AmphiDEB project are as of now (2025-06-04) based on this model. 
 
 - Larvae build up reserves at rate $\gamma \kappa \dot{A} - \dot{M}$
 - Metamorphs deplete reserve at rate $-(\dot{M} + \dot{H} + \dot{J})$ (the obligatory fluxes)
