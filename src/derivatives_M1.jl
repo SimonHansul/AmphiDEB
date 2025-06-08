@@ -1,6 +1,8 @@
 # derivatives_M1.jl
 
 
+const PMOAS = ["G", "M", "A", "R", "Hneg", "Hpos", "KAPneg"]
+
 """
     M1_complete_ODE_with_loglogistic_TD!(du, u, p, t)::Nothing
 

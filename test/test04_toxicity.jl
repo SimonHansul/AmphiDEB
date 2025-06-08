@@ -103,3 +103,8 @@ using AmphiDEB
     end
 end
 
+
+p = deepcopy(AmphiDEB.defaultparams)
+p.spc.KD[3] = 1.
+
+
