@@ -28,7 +28,7 @@ function M2_DEB!(du, u, p, t)::Nothing
 
     determine_life_stage!(du, u, p, t)
     Arrhenius!(du, u, p, t)
-    eta_AS, kappa = life_stage_and_plasticity_effects(du, u, p, t)
+    eta_AS, kappa = life_stage_and_plasticity_effects!(du, u, p, t)
 
     M2_ingestion!(du, u, p, t)
     maintenance!(du, u, p, t)

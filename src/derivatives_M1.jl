@@ -64,7 +64,7 @@ function M1_DEB!(du, u, p, t)::Nothing
 
     determine_life_stage!(du, u, p, t)
     Arrhenius!(du, u, p, t)
-    eta_AS, kappa = life_stage_and_plasticity_effects(du, u, p, t)
+    eta_AS, kappa = life_stage_and_plasticity_effects!(du, u, p, t)
 
     M1_ingestion!(du, u, p, t)
     maintenance!(du, u, p, t)
@@ -283,26 +283,77 @@ end
 
 
 """
-    minimal_TK_aquatic(
+    TK_aquatic(
         larva::Float64,
         k_D::Float64, 
         C_W::Float64,
-        D::Float64
+        D::Float64,
+        fb_u::Float64, 
+        fb_e::Float64, 
+        fb_g::Float64,
+        fb_R::Float64
         )::Float64
 
-Minimal TK model (no feedbacks) for aquatic exposure. 
+TK model for aquatic exposure of amphibians. 
 Aquatic exposure is 0 for non-larvae.
+
+## Arguments 
+
+- `larva`: Indicator of whether current life stage is larval
+- `k_D`: Dominant rate constant 
+- `C_W`: Aquatic exposure concentration
+- `D`: Scaled damage
+- `chi_G`: TK feedback with growth.
+
+## References 
+
+Jager, T. (2020). Revisiting simplified DEBtox models for analysing ecotoxicity data. Ecological Modelling, 416, 108904.
 """
-@inline function minimal_TK_aquatic(
+@inline function TK_aquatic(
     larva::Float64,
     k_D::Float64, 
     C_W::Float64,
-    D::Float64
+    D::Float64,
+    chi_G::Float64
     )::Float64
 
-    return k_D * ((larva * C_W) - D)
+    return k_D * ((larva * C_W) - D) - chi_G * D
 
 end
+
+function calc_chi_u(
+    fb_u::Float64, 
+    S_max::Float64, 
+    S::Float64, 
+    )::Float64
+
+    return fb_u * S_max^(1/3)/S
+
+end
+
+function calc_chi_e(
+    fb_e::Float64, 
+    S_max::Float64, 
+    S::Float64
+    )::Float64
+
+    return fb_e * S_max^(1/3)/S
+
+end
+
+function calc_chi_G(
+    fb_G::Float64, 
+    dS::Float64,
+    dE_mt::Float64, 
+    S::Float64,
+    E_mt::Float64,
+    )::Float64
+
+
+    return fb_G * (dS+dE_mt)/(S+E_mt)
+
+end
+
 
 """
     TKTD_LL2!(du, u, p, t)::Nothing
@@ -316,10 +367,19 @@ TKTD module with log-logistic dose-response.
     ind.y_j .= 1.0 # reset relative responses 
     ind.h_z = p.ind[:h_b] # reset GUTS-SD hazard rate to background mortality
 
+    # calculate feedbacks
+    ind.chi_G = calc_chi_G(p.ind[:fb_G], du.ind[:S], du.ind[:E_mt], u.ind[:S], u.ind[:E_mt])
+
     for z in eachindex(glb.C_W) # for every chemical
         for j in eachindex(ind.y_j) # for every PMoA
             # calculate change in damage
-            du.ind.D_j[z,j] = minimal_TK_aquatic(ind[:larva], p.ind.KD[z,j], glb.C_W[z], ind.D_j[z,j]) 
+            du.ind.D_j[z,j] = TK_aquatic(
+                ind[:larva], 
+                p.ind.KD[z,j], 
+                glb.C_W[z], 
+                ind.D_j[z,j],
+                ind[:chi_G]
+                ) 
             # update relative response with respect to PMoA j
             # PMoAs with decreasing response
             if !(j in [2,6]) 
@@ -330,7 +390,7 @@ TKTD module with log-logistic dose-response.
             end
         end
         # calculate change in damage for lethal effects
-        du.ind.D_h[z] = minimal_TK_aquatic(ind[:larva], p.ind[:KD_h][z], glb[:C_W][z], ind[:D_h][z]) 
+        du.ind.D_h[z] = TK_aquatic(ind[:larva], p.ind[:KD_h][z], glb[:C_W][z], ind[:D_h][z]) 
         # update hazard rate
         ind.h_z += LL2GUTS(ind.D_h[z], p.ind.E_h[z], p.ind.B_h[z])
     end
@@ -355,7 +415,7 @@ TKTD module with linear dose-response.
     for z in eachindex(glb.C_W) # for every chemical
         for j in eachindex(ind.y_j) # for every PMoA
             # calculate change in damage
-            du.ind.D_j[z,j] = minimal_TK_aquatic(ind[:larva], p.ind.KD[z,j], glb.C_W[z], ind.D_j[z,j]) 
+            du.ind.D_j[z,j] = TK_aquatic(ind[:larva], p.ind.KD[z,j], glb.C_W[z], ind.D_j[z,j]) 
             # update relative response with respect to PMoA j
             # PMoAs with decreasing response
             if j != 2 
@@ -366,7 +426,7 @@ TKTD module with linear dose-response.
             end
         end
         # calculate change in damage for lethal effects
-        du.ind.D_h[z] = minimal_TK_aquatic(ind[:larva], p.ind[:KD_h][z], glb[:C_W][z], ind[:D_h][z]) 
+        du.ind.D_h[z] = TK_aquatic(ind[:larva], p.ind[:KD_h][z], glb[:C_W][z], ind[:D_h][z]) 
         # update hazard rate
         ind.h_z += LL2GUTS(ind.D_h[z], p.ind.E_h[z], p.ind.B_h[z])
     end
@@ -590,16 +650,64 @@ This includes temperature effects on κ as in Romoli et al. (2024).
     return 1/(1 + (((1-kappa)/kappa) * exp(-b_T * ((T_ref - T)/T_ref))))*y_K
 end
 
+@inline function calc_S_max(
+    dI_max::Float64, 
+    eta_IA::Float64, 
+    kappa::Float64, 
+    k_M::Float64
+    )::Float64
+
+    return ((dI_max*eta_IA*kappa)/k_M)^3
+
+end
+
+function calc_S_max(
+    embryo::Float64, 
+    larva::Float64, 
+    metamorph::Float64, 
+    juvenile::Float64, 
+    adult::Float64, 
+    dI_max_emb::Float64, 
+    dI_max_lrv::Float64,
+    dI_max_juv::Float64, 
+    eta_IA::Float64, 
+    kappa::Float64, 
+    k_M_emb::Float64, 
+    k_M_juv::Float64
+    )::Float64
+
+    return (embryo) * calc_S_max(dI_max_emb, eta_IA, kappa, k_M_emb) +
+           (larva + metamorph) * calc_S_max(dI_max_lrv, eta_IA, kappa, k_M_emb) + 
+           (juvenile + adult) * calc_S_max(dI_max_juv, eta_IA, kappa, k_M_juv)
+
+end
+
 
 """
-    life_stage_and_plasticity_effects(du, u, p, t)::Tuple{Float64,Float64}
+    life_stage_and_plasticity_effects!(du, u, p, t)::Tuple{Float64,Float64}
 
 Life-stage specificity of parameters., as well as plastic responses to environmental factors (e.g. effect of temperature on κ).
+
+Updates the value of `u.ind[:S_max]`, returns life stage-specific `kappa` and `eta_AS`.
 """
-function life_stage_and_plasticity_effects(du, u, p, t)::Tuple{Float64,Float64}
+function life_stage_and_plasticity_effects!(du, u, p, t)::Tuple{Float64,Float64}
 
     eta_AS = calc_eta_AS(u.ind[:embryo], u.ind[:larva], u.ind[:metamorph], p.ind[:eta_AS_emb], u.ind[:juvenile], u.ind[:adult], p.ind[:eta_AS_juv])
     kappa = calc_kappa(u.ind[:embryo], u.ind[:larva], u.ind[:metamorph], p.ind[:kappa_emb], u.ind[:juvenile], u.ind[:adult], p.ind[:kappa_juv], p.ind[:b_T], p.ind[:T_ref], p.glb[:T], u.ind.y_j[7])
+    u.ind.S_max = calc_S_max(
+        u.ind[:embryo],
+        u.ind[:larva],
+        u.ind[:metamorph],
+        u.ind[:juvenile],
+        u.ind[:adult],
+        p.ind[:dI_max_emb],
+        p.ind[:dI_max_lrv],
+        p.ind[:di_max_:juv],
+        p.ind[:eta_IA],
+        kappa, 
+        p.ind[:k_M_emb],
+        p.ind[:k_M_juv]
+    )
 
     return eta_AS, kappa
 end

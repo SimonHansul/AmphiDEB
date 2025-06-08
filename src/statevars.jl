@@ -43,6 +43,9 @@ function initialize_individual_statevars(
         M = 0., # somatic maintenance
         J = 0., # maturity maintenance 
         
+        S_max = calc_S_max(p.ind[:dI_max_emb], p.ind[:eta_IA], p.ind[:kappa_emb], p.ind[:k_M_emb]), # currently possible maximum stuructural mass
+        chi_G = 1., # TK feedback growth
+
         D_j = EcotoxSystems.constrmmat(p.ind.KD), # sublethal damage per stressor and PMoA; constrmmat constructs a MMatrix from the shape of the input
         D_h = EcotoxSystems.constrmvec(p.ind.KD_h), # lethal damage per stressor; constrmvec constructs a MVector from the shape of the 
 
