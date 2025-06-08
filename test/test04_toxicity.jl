@@ -103,8 +103,40 @@ using AmphiDEB
     end
 end
 
+import AmphiDEB: PMOAS
 
-p = deepcopy(AmphiDEB.defaultparams)
-p.spc.KD[3] = 1.
+# TODO: add proper test for growth-TK-feedback
+begin
+    p = deepcopy(AmphiDEB.defaultparams)
 
+    p.spc.KD[3] = 1.
+    p.spc.E[3] = 1. 
+    p.spc.B[3] = 2.
+    p.spc.fb_G = 1.
 
+    @time sim = exposure(AmphiDEB.ODE_simulator, p, [0., 0.125, 0.25, 0.5, ]);
+
+    @df sim plot(
+        groupedlineplot(:t, :D_j_1_3, :treatment_id), 
+        groupedlineplot(:t, :S .+ :E_mt, :treatment_id),
+        xlabel = "t", 
+        ylabel = ["D" "W"]
+    )
+
+    p.spc.fb_G = 0.
+    sim_nofB = exposure(AmphiDEB.ODE_simulator, p, [0., 0.125, 0.25, 0.5, ]);
+    @df sim_nofB groupedlineplot!(:t, :D_j_1_3, :treatment_id, palette = palette(:default)[1:4], subplot = 1, linestyle = :dash)
+    @df sim_nofB groupedlineplot!(:t, :S .+ :E_mt, :treatment_id, palette = palette(:default)[1:4], subplot = 2, linestyle = :dash)
+
+    savefig(raw"C:\Users\Simon\Dropbox\vault\public\attachments\feedback_growth_vs_nofeedback.png")
+
+    df = @subset(sim, :treatment_id .== 2)
+
+    df[!,:dW] = vcat(0, diff(df.S))+vcat(0, diff(df.E_mt))
+    df[!,:dD] = vcat(0, diff(df.D_j_1_3))
+
+    @df df plot(
+        plot(:t, :dW),
+        scatter(:dW, :dD)
+    )    
+end

@@ -1,6 +1,5 @@
 # derivatives_M1.jl
 
-
 const PMOAS = ["G", "M", "A", "R", "Hneg", "Hpos", "KAPneg"]
 
 """
@@ -370,7 +369,13 @@ TKTD module with log-logistic dose-response.
     ind.h_z = p.ind[:h_b] # reset GUTS-SD hazard rate to background mortality
 
     # calculate feedbacks
-    ind.chi_G = calc_chi_G(p.ind[:fb_G], du.ind[:S], du.ind[:E_mt], u.ind[:S], u.ind[:E_mt])
+    ind.chi_G = calc_chi_G(
+        p.ind[:fb_G], 
+        du.ind[:S], 
+        du.ind[:E_mt], 
+        u.ind[:S], 
+        u.ind[:E_mt]
+        )
 
     for z in eachindex(glb.C_W) # for every chemical
         for j in eachindex(ind.y_j) # for every PMoA
@@ -695,7 +700,7 @@ Updates the value of `u.ind[:S_max]`, returns life stage-specific `kappa` and `e
 function life_stage_and_plasticity_effects!(du, u, p, t)::Tuple{Float64,Float64}
 
     eta_AS = calc_eta_AS(u.ind[:embryo], u.ind[:larva], u.ind[:metamorph], p.ind[:eta_AS_emb], u.ind[:juvenile], u.ind[:adult], p.ind[:eta_AS_juv])
-    kappa = calc_kappa(u.ind[:embryo], u.ind[:larva], u.ind[:metamorph], p.ind[:kappa_emb], u.ind[:juvenile], u.ind[:adult], p.ind[:kappa_juv], p.ind[:b_T], p.ind[:T_ref], p.glb[:T], u.ind.y_j[7])
+    kappa = calc_kappa(u.ind[:embryo], u.ind[:larva], u.ind[:metamorph], p.ind[:kappa_emb], u.ind[:juvenile], u.ind[:adult], p.ind[:kappa_juv], p.ind[:b_T], p.ind[:T_ref], p.glb[:T], u.ind[:y_j][7])
     u.ind.S_max = calc_S_max(
         u.ind[:embryo],
         u.ind[:larva],

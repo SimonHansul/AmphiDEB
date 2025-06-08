@@ -227,7 +227,7 @@ end
     @test unique(isapprox.(1, sum_indicators, atol = 1e-3)) == [true]
 end
 
-@testset "gamma = equilbrium reserve fraction" begin
+@testset "gamma = equilbrium reserve  fraction" begin
     p = deepcopy(AmphiDEB.defaultparams)
     p.glb.t_max = 200.
     p.spc.H_j1 = Inf
