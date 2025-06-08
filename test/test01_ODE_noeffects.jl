@@ -315,3 +315,35 @@ end
 
     @test unique(isapprox.(1, sum_indicators, atol = 1e-3)) == [true]
 end
+
+
+@testset "gamma = equilbrium reserve fraction" begin
+    p = deepcopy(AmphiDEB.defaultparams)
+    p.glb.t_max = 200.
+    p.spc.H_j1 = Inf
+    gamvals = [0.1, 0.25, 0.5, 0.75, 0.9]
+    E_mt_rel_fin = similar(gamvals)
+
+    plt = plot(
+        ylabel = ["% reserve" "structure"], 
+        xlabel = "t",
+        layout = (1,2)
+    )
+     
+    for (i,gamma) in enumerate(gamvals)
+        p.spc.gamma = gamma
+        sim = AmphiDEB.ODE_simulator(p)
+        sim[!,:E_mt_rel] = sim.E_mt ./ (sim.E_mt .+ sim.S)
+        
+        @df sim plot!(:t, :E_mt_rel, color = i, subplot = 1)
+        hline!([gamma], color = i, linestyle = :dash, subplot = 1)
+
+        @df sim plot!(:t, :S, subplot = 2)
+
+        E_mt_rel_fin[i] = sim.E_mt_rel[end]
+    end
+
+    display(plt)
+
+    @test unique(isapprox.(E_mt_rel_fin, gamvals, atol = 0.01)) == [true]
+end

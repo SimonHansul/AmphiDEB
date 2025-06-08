@@ -390,7 +390,7 @@ TKTD module with log-logistic dose-response.
             end
         end
         # calculate change in damage for lethal effects
-        du.ind.D_h[z] = TK_aquatic(ind[:larva], p.ind[:KD_h][z], glb[:C_W][z], ind[:D_h][z]) 
+        du.ind.D_h[z] = TK_aquatic(ind[:larva], p.ind[:KD_h][z], glb[:C_W][z], ind[:D_h][z], ind[:chi_G]) 
         # update hazard rate
         ind.h_z += LL2GUTS(ind.D_h[z], p.ind.E_h[z], p.ind.B_h[z])
     end
@@ -702,7 +702,7 @@ function life_stage_and_plasticity_effects!(du, u, p, t)::Tuple{Float64,Float64}
         u.ind[:adult],
         p.ind[:dI_max_emb],
         p.ind[:dI_max_lrv],
-        p.ind[:di_max_:juv],
+        p.ind[:dI_max_juv],
         p.ind[:eta_IA],
         kappa, 
         p.ind[:k_M_emb],
