@@ -962,6 +962,7 @@ end
         larva::Float64,
         metamorph::Float64,
         k_M_emb::Float64,
+        delta_k_M_mt::Float64,
         juvenile::Float64,
         adult::Float64,
         k_M_juv::Float64
@@ -974,12 +975,13 @@ Current value of `k_M`, depending on life stage.
     larva::Float64,
     metamorph::Float64,
     k_M_emb::Float64,
+    delta_k_M_mt::Float64,
     juvenile::Float64,
     adult::Float64,
     k_M_juv::Float64
     )::Float64
 
-    return (embryo + larva + metamorph) * k_M_emb + (juvenile + adult) * k_M_juv
+    return (embryo + larva) * k_M_emb + metamorph * k_M_emb * delta_k_M_mt + (juvenile + adult) * k_M_juv
 
 end
 
@@ -1062,7 +1064,7 @@ end
 
 function maintenance!(du, u, p, t)::Nothing 
 
-    k_M = determine_k_M(u.ind[:embryo], u.ind[:larva], u.ind[:metamorph], p.ind[:k_M_emb], u.ind[:juvenile], u.ind[:adult], p.ind[:k_M_juv])   
+    k_M = determine_k_M(u.ind[:embryo], u.ind[:larva], u.ind[:metamorph], p.ind[:k_M_emb], p.ind[:delta_k_M_mt], u.ind[:juvenile], u.ind[:adult], p.ind[:k_M_juv])   
     k_J = determine_k_J(u.ind[:embryo], u.ind[:larva], u.ind[:metamorph], p.ind[:k_J_emb], u.ind[:juvenile], u.ind[:adult], p.ind[:k_J_juv])   
 
     du.ind.M = dM(u.ind[:S], k_M, u.ind[:y_j][2], u.ind[:y_jP][2], u.ind[:y_T])

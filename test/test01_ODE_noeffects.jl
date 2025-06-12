@@ -17,7 +17,8 @@ using Revise
 using AmphiDEB
 using EcotoxSystems
 
-function run_basetest(m)
+function run_basetest(m; pmod = p->p)
+
     global p = deepcopy(defaultparams)
 
     p.glb.t_max = 365*2
@@ -27,6 +28,8 @@ function run_basetest(m)
 
     S_max_anl = AmphiDEB.calc_S_max_juv(p.spc)
     H_max_anl_juv = AmphiDEB.calc_H_eq_juv(p.spc)
+
+    p = pmod(p) # optional modification of parameters
 
     @time global sim = AmphiDEB.ODE_simulator(
             p, 
@@ -116,7 +119,13 @@ end
 end
 
 @testset "Default parameters M2" begin
-    run_basetest(AmphiDEB.M2_complete_ODE_with_loglogistic_TD!)
+    run_basetest(
+        AmphiDEB.M2_complete_ODE_with_loglogistic_TD!; 
+        pmod = p -> begin 
+            p.spc.delta_k_M_mt = 0.75; 
+            return p 
+        end
+        )
 end
 
 @testset "Effect of gamma on shape of the growth trajectory" begin

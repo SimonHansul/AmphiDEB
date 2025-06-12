@@ -1,4 +1,7 @@
 # derivatives_M2.jl
+# model version with alternative rules for climax: 
+#   ingestion immediately goes to 0
+#   we make the simplifying assumption that dS = 0 during metamorphosis 
 
 """
     AmphiDEB_ODE_with_loglogistic_TD!(du, u, p, t)::Nothing
