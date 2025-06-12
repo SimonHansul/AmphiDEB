@@ -29,7 +29,7 @@ This is the default. All analyses in the AmphiDEB project are as of now (2025-06
 
 - Larval stage identical to M1
 - Feeding rate for metamorphs immediately drops to 0
-- Correction factor $\delta_E$ allows for a higher yield of maintenance costs and maturation on larval reserves, accounting for potentially higher energy density of the mobilized reserves
+- Simplifying assumptions: $\dot{S} = 0$ during climax.
 
 
 ## Acknowledgements & Funding
@@ -147,3 +147,7 @@ funded by the European Food Safety Authortiy (EFSA).
     - M1: metamorphic reserve + residual ingestion flux 
     - M2: metamorphoc reserve without residual ingestion flux
     - Both model versions include a parameter `delta_E` that allows for higher yield of maintenance and maturation on reserves
+
+### v0.3.6
+
+- Added parameter `delta_k_M_mt`, which gives a relative change in the somatic maintenance rate for metamorphs, relative to that of larvae. Applies to all model variantes. The default is 1 (= parameter has no effect).
