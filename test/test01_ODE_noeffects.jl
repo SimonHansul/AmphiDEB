@@ -122,7 +122,7 @@ end
     run_basetest(
         AmphiDEB.M2_complete_ODE_with_loglogistic_TD!; 
         pmod = p -> begin 
-            p.spc.delta_k_M_mt = 0.75; 
+            p.spc.delta_k_M_mt = 0.33; 
             return p 
         end
         )
