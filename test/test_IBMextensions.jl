@@ -74,3 +74,9 @@ norm(x) = x ./ sum(x)
 #mit mortality länger simulieren (mehrere peaks)
 #neue parameter (discoglossus) länger simulieren
 #nach starvation parametern suchen (suche dokumentieren) 
+
+
+#10.04
+#variabiltität testen: propagate zoom hj1 = 1 und zoom faktor 0.17 -> 0.1?, mehr startindividuen
+#asuwertung: median/mean der letzten Jahre
+#welcher m_thr angepasst? -> welcher mechanismus(kleiner, später,...)
