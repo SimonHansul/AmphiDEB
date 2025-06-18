@@ -17,6 +17,12 @@ Explicitly **not** within the scope of this package:
 
 ## Model variants
 
+The package implements two model variants, `M1` is currently the default. 
+`M1` tends to be easier to fit to data (at least with the current routines), but is less biologically coherent, 
+because metamorphs still ingest some food during climax (though at reduced rate). 
+
+`M2` is more biologically sound, but robust calibration routines are work in progress.
+
 ### M1 
 
 This is the default. All analyses in the AmphiDEB project are as of now (2025-06-04) based on this model. 
