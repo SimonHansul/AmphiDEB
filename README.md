@@ -18,8 +18,9 @@ Explicitly **not** within the scope of this package:
 ## Model variants
 
 The package implements two model variants, `M1` is currently the default. 
-`M1` tends to be easier to fit to data (at least with the current routines), but is less biologically coherent, 
-because metamorphs still ingest some food during climax (though at reduced rate). 
+`M1` tends to be easier to fit to data (at least with the current routines), but one some argue is less biologically coherent, 
+because metamorphs (Gosner stage 42-46) still ingest some food, while it is common wisdom that food ingestion stops during metamorphic climax. <br> 
+However, the idea that there is some food ingestion during metamorphosis ( Gosner stage 42) does not appear entirely absurd (cf. Pfab et al. (2020)).
 
 `M2` is more biologically sound, but robust calibration routines are work in progress.
 
@@ -35,6 +36,9 @@ because metamorphs still ingest some food during climax (though at reduced rate)
 - Feeding rate for metamorphs immediately drops to 0
 - Simplifying assumptions: $\dot{S} = 0$ during climax.
 
+## References
+
+Pfab, F., DiRenzo, G. V., Gershman, A., Briggs, C. J., & Nisbet, R. M. (2020). Energy budgets for tadpoles approaching metamorphosis. Ecological Modelling, 436, 109261.
 
 ## Acknowledgements & Funding
 
