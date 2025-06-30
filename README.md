@@ -20,7 +20,7 @@ Explicitly **not** within the scope of this package:
 The package implements two model variants, `M1` is currently the default. 
 `M1` tends to be easier to fit to data (at least with the current routines), but some might argue that is less biologically coherent, 
 because metamorphs (Gosner stage 42-46) still ingest some food, while it is common wisdom that food ingestion stops during metamorphic climax. <br> 
-However, considering studies that actually attempted to measure ingestion rates throughout metamorphosis, the idea of a residual ingestion flux does not appear entirely absurd (cf. Pfab et al. (2020)).
+However, considering studies that actually attempted to measure ingestion rates throughout metamorphosis, the idea of a residual ingestion flux does not appear entirely absurd either (cf. Pfab et al. (2020)).
 
 `M2` is more biologically sound, but robust calibration routines are work in progress.
 
