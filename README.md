@@ -18,7 +18,7 @@ Explicitly **not** within the scope of this package:
 ## Model variants
 
 The package implements two model variants, `M1` is currently the default. 
-`M1` tends to be easier to fit to data (at least with the current routines), but one some argue is less biologically coherent, 
+`M1` tends to be easier to fit to data (at least with the current routines), but some might argue that is less biologically coherent, 
 because metamorphs (Gosner stage 42-46) still ingest some food, while it is common wisdom that food ingestion stops during metamorphic climax. <br> 
 However, the idea that there is some food ingestion during metamorphosis ( Gosner stage 42) does not appear entirely absurd (cf. Pfab et al. (2020)).
 
