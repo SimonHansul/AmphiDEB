@@ -1,6 +1,14 @@
 # derivatives_M1.jl
 
-const PMOAS = ["G", "M", "A", "R", "Hneg", "Hpos", "KAPneg"]
+const PMOAS = [
+    "G", # decrease in growth efficiency
+    "M", # increase in maintenance costs
+    "A", # decrease in assimilation efficiency
+    "R", # decrease in reproduction efficiency
+    "Hneg", # decrease in threshold for metamorphosis
+    "Hpos", # increase in threshold for metamorphosis
+    "KAPneg" # decrease in kappa - faster development, less growth
+    ]
 
 """
     M1_complete_ODE_with_loglogistic_TD!(du, u, p, t)::Nothing
