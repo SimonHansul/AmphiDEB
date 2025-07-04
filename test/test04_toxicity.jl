@@ -128,7 +128,6 @@ begin
     @df sim_nofB groupedlineplot!(:t, :D_j_1_3, :treatment_id, palette = palette(:default)[1:4], subplot = 1, linestyle = :dash)
     @df sim_nofB groupedlineplot!(:t, :S .+ :E_mt, :treatment_id, palette = palette(:default)[1:4], subplot = 2, linestyle = :dash)
 
-    savefig(raw"C:\Users\Simon\Dropbox\vault\public\attachments\feedback_growth_vs_nofeedback.png")
 
     df = @subset(sim, :treatment_id .== 2)
 

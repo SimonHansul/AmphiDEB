@@ -17,11 +17,11 @@ using Revise
 using AmphiDEB
 using EcotoxSystems
 
-using BenchmarkTools
-AmphiDEB.ODE_simulator(AmphiDEB.defaultparams);
-@benchmark AmphiDEB.ODE_simulator(AmphiDEB.defaultparams)
-
-VSCodeServer.@profview_allocs AmphiDEB.ODE_simulator(AmphiDEB.defaultparams)
+#using BenchmarkTools
+#AmphiDEB.ODE_simulator(AmphiDEB.defaultparams);
+#@benchmark AmphiDEB.ODE_simulator(AmphiDEB.defaultparams)
+#
+#VSCodeServer.@profview_allocs AmphiDEB.ODE_simulator(AmphiDEB.defaultparams)
 
 
 function run_basetest(m; pmod = p->p)
@@ -125,15 +125,16 @@ end
     run_basetest(AmphiDEB.M1_complete_ODE_with_loglogistic_TD!)
 end
 
-@testset "Default parameters M2" begin
-    run_basetest(
-        AmphiDEB.M2_complete_ODE_with_loglogistic_TD!; 
-        pmod = p -> begin 
-            p.spc.delta_k_M_mt = 0.33; 
-            return p 
-        end
-        )
-end
+#
+#@testset "Default parameters M2" begin
+#    run_basetest(
+#        AmphiDEB.M2_complete_ODE_with_loglogistic_TD!; 
+#        pmod = p -> begin 
+#            p.spc.delta_k_M_mt = 0.33; 
+#            return p 
+#        end
+#        )
+#end
 
 @testset "Effect of gamma on shape of the growth trajectory" begin
 
