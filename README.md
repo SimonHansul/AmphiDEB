@@ -159,3 +159,8 @@ funded by the European Food Safety Authortiy (EFSA).
 ### v0.3.6
 
 - Added parameter `delta_k_M_mt`, which gives a relative change in the somatic maintenance rate for metamorphs, relative to that of larvae. Applies to all model variantes. The default is 1 (= parameter has no effect).
+
+### v0.3.7 
+
+- Perfrmance improvements, working towards allocation-free ODEs. 
+    - Achieved minor performance improvements by using @inbounds (ca. 15% decrease in memory allocation).

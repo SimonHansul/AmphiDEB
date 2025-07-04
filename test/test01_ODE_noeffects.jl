@@ -13,9 +13,16 @@ using StatsBase
 
 using Revise
 
-@time import AmphiDEB: defaultparams, ODE_simulator, Amphibian_DEB!, AmphiDEB_ODE!
+@time import AmphiDEB: defaultparams, ODE_simulator
 using AmphiDEB
 using EcotoxSystems
+
+using BenchmarkTools
+AmphiDEB.ODE_simulator(AmphiDEB.defaultparams);
+@benchmark AmphiDEB.ODE_simulator(AmphiDEB.defaultparams)
+
+VSCodeServer.@profview_allocs AmphiDEB.ODE_simulator(AmphiDEB.defaultparams)
+
 
 function run_basetest(m; pmod = p->p)
 

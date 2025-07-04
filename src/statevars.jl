@@ -76,7 +76,7 @@ function initialize_individual_statevars(
         # this should use EcotoxSystems.constrmvec to construct a mutable static array
         # it doesn't work right now, not sure why, so I use regular arrays 
         # maybe slows down simulation a little compared to static array, but otherwise the same
-        y_jP = ones(4), #EcotoxSystems.constrmvec(Vector(p.ind.e_P), fillval = 1) # response to pathogen per PMoA
+        y_jP = @MMatrix([1. 1. 1. 1.]), #EcotoxSystems.constrmvec(Vector(p.ind.e_P), fillval = 1) # response to pathogen per PMoA
         kwargs...
     )
 end
