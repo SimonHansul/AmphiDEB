@@ -109,19 +109,14 @@ import AmphiDEB: PMOAS
 begin
     p = deepcopy(AmphiDEB.defaultparams)
 
-    p.spc.KD[3] = 1.
+    p.spc.KD[3] = .1
     p.spc.E[3] = 1. 
     p.spc.B[3] = 2.
     p.spc.fb_G = 1.
 
-    @time sim = exposure(AmphiDEB.ODE_simulator, p, [0., 0.125, 0.25, 0.5, ]);
+    p.spc.H_j1 = Inf
 
-    @df sim plot(
-        groupedlineplot(:t, :D_j_1_3, :treatment_id), 
-        groupedlineplot(:t, :S .+ :E_mt, :treatment_id),
-        xlabel = "t", 
-        ylabel = ["D" "W"]
-    )
+    @time sim_fB = exposure(AmphiDEB.ODE_simulator, p, [0., 0.125, 0.25, 0.5, ]);
 
     p.spc.fb_G = 0.
     sim_nofB = exposure(AmphiDEB.ODE_simulator, p, [0., 0.125, 0.25, 0.5, ]);
@@ -129,13 +124,13 @@ begin
     @df sim_nofB groupedlineplot!(:t, :S .+ :E_mt, :treatment_id, palette = palette(:default)[1:4], subplot = 2, linestyle = :dash)
 
 
-    df = @subset(sim, :treatment_id .== 2)
+    df = @subset(sim_fB, :treatment_id .== 2)
 
     df[!,:dW] = vcat(0, diff(df.S))+vcat(0, diff(df.E_mt))
     df[!,:dD] = vcat(0, diff(df.D_j_1_3))
 
     @df df plot(
-        plot(:t, :dW),
-        scatter(:dW, :dD)
+        plot(:t, :dW, xlabel = "t", ylabel = "dW"),
+        scatter(:dW, :dD, xlabel = "dW", ylabel = "dD")
     )    
 end

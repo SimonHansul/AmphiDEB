@@ -6,31 +6,37 @@ using Test
 
 using Revise
 using AmphiDEB
-
  
 @testset "Reserve dynamics under starvation" begin
     p.glb.t_max = 365. * 1
 
-    p.glb.dX_in = [1., 1.] # limit food availability
+    p.glb.dX_in = [.5, 1.] # limit food availability
     p.spc.H_j1 = Inf # ignore metamorphosis
     p.spc.H_p = Inf # ignore adulthood
     
-    @time sim = AmphiDEB.ODE_simulator(
-        p
-        )
-    @df sim plot(
-        plot(:t, [:S :E_mt], label = ["S" "E_mt"]),
-        plot(:t, vcat(0, diff(:M)), label = ""),
-        plot(:t, vcat(0, diff(:I)), label = ""), 
-        xlabel = "t", ylabel = ["W" "dI" "dM"], 
-        layout = (1,3), size = (1000,350)
-    ) |> display
+    E_mt_fin = []
+    E_mt_rel_fin = []
 
-    # without additional starvation rules, 
-    # change in reserve should go to 0. no endless reserve accumulation as individuals stop growing
-    @test maximum(diff(sim.E_mt)[end-10:end]) <= 1e-4
+    for dX_in in [1., .5, .25]
+        p.glb.dX_in[1] = dX_in
+        sim = AmphiDEB.ODE_simulator(
+            p
+            )
+        
+        # verify that E_mt reaches equilibrium
+        @test maximum(diff(sim.E_mt)[end-10:end]) <= 1e-4
+
+        push!(E_mt_fin, sim.E_mt[end])
+        push!(E_mt_rel_fin, sim.E_mt[end]/sim.S[end])
+    end
+
+    # verify that E_mt decreases with decreasing food availability
+    @test E_mt_fin == sort(E_mt_fin, rev = true)
+    # verify that relative reserve density decreases with decreasing food availability
+    @test E_mt_rel_fin == sort(E_mt_rel_fin, rev = true)
             
 end
+
 
 
 

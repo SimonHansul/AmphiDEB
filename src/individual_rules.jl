@@ -48,7 +48,7 @@ end
 
 function default_individual_rules!(
     a::EcotoxSystems.AbstractDEBIndividual, 
-    m::EcotoxSystems.AbstractDEBIBM
+    m::EcotoxSystems.IndividualBasedModel
     )::Nothing
 
     @unpack glb,ind = a.u

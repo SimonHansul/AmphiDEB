@@ -44,6 +44,7 @@ end
 
 function M1_individual_ODE_with_loglogistic_TD!(du, u, p, t)::Nothing
 
+    pathogen_dynamics!(du, u, p, t)::Nothing 
     TKTD_LL2!(du, u, p, t) # TKTD with mixtures assuming IA
     Pathogen_Infection!(du, u, p, t) # infection, release of zoospores and relative response to sporangia density
     M1_DEB!(du, u, p, t) # Amphibian DEB model
@@ -53,6 +54,7 @@ end
 
 function M1_individual_ODE_with_linear_TD!(du, u, p, t)::Nothing
 
+    pathogen_dynamics!(du, u, p, t)::Nothing 
     TKTD_linear!(du, u, p, t) # TKTD with mixtures assuming IA
     Pathogen_Infection!(du, u, p, t) # infection, release of zoospores and relative response to sporangia density
     M1_DEB!(du, u, p, t) # Amphibian DEB mode
@@ -127,8 +129,10 @@ end
 
 function AmphiDEB_global!(du, u, p, t)::Nothing
 
-    for i in eachindex(u.glb[:X])
-        du.glb.X[i] = dX(p.glb[:dX_in][i], p.glb[:k_V][i], u.glb[:X][i])
+    @inbounds begin
+        for i in eachindex(u.glb[:X])
+            du.glb.X[i] = dX(p.glb[:dX_in][i], p.glb[:k_V][i], u.glb[:X][i])
+        end        
     end
 
     #u.ind.T = p.glb.tempfun(t, p.glb.temp...) # TODO: temporally variable temperature could be added here, e.g. applying temperature_sinusoidal
@@ -180,7 +184,9 @@ end
 
 Derivative of the zoospore abundance `P_Z`. 
 
-Note that this function does not take changes in zoopsore abundance due to encystem into account. 
+Note that this funcpathogen_dynamics!(du, u, p, t)::Nothing 
+
+endtion does not take changes in zoopsore abundance due to encystem into account. 
 This is handled in `Pathogen_Infection!`.
 
 - `mu`: Zoospore background mortality rate
@@ -236,31 +242,42 @@ See [Drawert et al (2017)](https://royalsocietypublishing.org/doi/full/10.1098/r
 
 end
 
-function Pathogen_Infection!(du, u, p, t)::Nothing
-
-    # life-stage specificity of the zoospore-host encounter rate 
-    # - currently turned off to simplify things 
-    # this needs to be re-evaluated. tadpoles do get infected but are unlikely to die 
-    # maybe only make the effect parameters life stage-specific?
-    gamma = p.pth.gamma 
+function pathogen_dynamics!(du, u, p, t)::Nothing 
 
     # growth and killing of sporangia 
     du.ind.P_S = dP_S(p.pth[:v0], p.pth[:gamma], u.glb[:P_Z], p.pth[:eta], p.pth[:f], u.ind[:P_S], p.pth[:sigma0], p.pth[:sigma1], p.ind[:Chi])
 
     # feedback with zoospore population 
-    du.glb.P_Z += p.pth.eta * (1-p.pth.f) * u.ind.P_S # release of spores
-    du.glb.P_Z -= gamma * u.glb.P_Z # encystment
+    du.glb.P_Z += p.pth[:eta] * (1-p.pth[:f]) * u.ind[:P_S] # release of spores
+    du.glb.P_Z -= p.pth[:gamma] * u.glb[:P_Z] # encystment
 
+    return nothing
+
+end
+
+function pathogen_response!(du, u, p, t)::Nothing
+    
     # relative response to pathogen 
-    
-    for j in eachindex(u.ind[:y_jP])
-        if j != 2
-            u.ind.y_jP[j] = LL2(u.ind.P_S, p.ind.E_P[j], p.ind.B_P[j])
-        else
-            u.ind.y_jP[j] = LL2pos(u.ind.P_S, p.ind.E_P[j], p.ind.B_P[j])
-        end
-    end    
-    
+    @inbounds begin
+        E_P = p.ind[:E_P]
+        B_P = p.ind[:B_P]
+        for j in eachindex(u.ind[:y_jP])
+            if j != 2
+                u.ind.y_jP[j] = LL2(u.ind[:P_S], E_P[j], B_P[j])
+            else
+                u.ind.y_jP[j] = LL2pos(u.ind[:P_S], E_P[j], B_P[j])
+            end
+        end    
+    end
+
+   
+    return nothing
+end
+
+function Pathogen_Infection!(du, u, p, t)::Nothing
+
+    pathogen_dynamics!(du, u, p, t)
+    pathogen_response!(du, u, p, t)
 
     return nothing
 end
@@ -272,7 +289,7 @@ end
 end
 
 @inline function LL2pos(x::Real, p::NTuple{2,Float64})::Real
-    return x >= 0 ? 1 - log((1 / (1 + Complex(x / p[1]) ^ p[2])).re) : 1.
+    return 1 - log((1 / (1 + Complex(x / p[1]) ^ p[2])).re)
 end
 
 @inline function NEC2pos(x::Real, p::NTuple{2,Float64})::Real
@@ -594,10 +611,12 @@ function determine_life_stage!(du, u, p, t)::Nothing
 
     @inbounds begin
 
+        y_j = u.ind[:y_j]
+
         u.ind.embryo = is_embryo(u.ind[:X_emb])
-        u.ind.larva = is_larva(u.ind[:X_emb], u.ind[:H], p.ind[:H_j1], u.ind[:y_j][5], u.ind[:y_j][6])
-        u.ind.metamorph = is_metamorph(u.ind[:H], p.ind[:H_j1], u.ind[:y_j][5], u.ind[:y_j][6], u.ind[:E_mt]) 
-        u.ind.juvenile = is_juvenile(u.ind[:H], p.ind[:H_j1], u.ind[:y_j][5], u.ind[:y_j][6], u.ind[:E_mt], p.ind[:H_p]) 
+        u.ind.larva = is_larva(u.ind[:X_emb], u.ind[:H], p.ind[:H_j1], y_j[5], y_j[6])
+        u.ind.metamorph = is_metamorph(u.ind[:H], p.ind[:H_j1], y_j[5], y_j[6], u.ind[:E_mt]) 
+        u.ind.juvenile = is_juvenile(u.ind[:H], p.ind[:H_j1], y_j[5], y_j[6], u.ind[:E_mt], p.ind[:H_p]) 
         u.ind.adult = is_adult(u.ind[:H], p.ind[:H_p]) 
         
     end
@@ -715,8 +734,11 @@ Updates the value of `u.ind[:S_max]`, returns life stage-specific `kappa` and `e
 function life_stage_and_plasticity_effects!(du, u, p, t)::Tuple{Float64,Float64}
 
     @inbounds begin
+
+        y_j = u.ind.y_j
+
         eta_AS = calc_eta_AS(u.ind[:embryo], u.ind[:larva], u.ind[:metamorph], p.ind[:eta_AS_emb], u.ind[:juvenile], u.ind[:adult], p.ind[:eta_AS_juv])
-        kappa = calc_kappa(u.ind[:embryo], u.ind[:larva], u.ind[:metamorph], p.ind[:kappa_emb], u.ind[:juvenile], u.ind[:adult], p.ind[:kappa_juv], p.ind[:b_T], p.ind[:T_ref], p.glb[:T], u.ind[:y_j][7])
+        kappa = calc_kappa(u.ind[:embryo], u.ind[:larva], u.ind[:metamorph], p.ind[:kappa_emb], u.ind[:juvenile], u.ind[:adult], p.ind[:kappa_juv], p.ind[:b_T], p.ind[:T_ref], p.glb[:T], y_j[7])
         u.ind.S_max = calc_S_max(
             u.ind[:embryo],
             u.ind[:larva],
@@ -956,6 +978,7 @@ end
 
 function M1_ingestion!(du, u, p, t)::Nothing
 
+    @inbounds begin
 
     u.ind.f_X = f_X(u.ind[:larva], u.ind[:metamorph], u.ind[:juvenile], u.ind[:adult], u.glb[:X], p.glb[:V_patch], p.ind[:K_X_lrv], p.ind[:K_X_juv])
 
@@ -970,7 +993,7 @@ function M1_ingestion!(du, u, p, t)::Nothing
     du.glb.X[2] -= (u.ind[:juvenile] + u.ind[:adult]) * du.ind.I
 
     # assimilation flux
-    @inbounds begin
+
         y_j = u.ind[:y_j]
         y_jP = u.ind[:y_jP]
         du.ind.A = dA(du.ind[:I], p.ind[:eta_IA], y_j[3], y_jP[3])
@@ -1260,12 +1283,19 @@ end
 
 function growth!(du, u, p, t, eta_AS::Real, kappa::Real)::Nothing
     
-    dS_emb_juv_ad = calc_dS_emb_juv_ad(kappa, du.ind[:A], du.ind[:M], p.ind[:eta_SA], u.ind[:y_j][1], u.ind[:y_jP][1], eta_AS)
-    dS_lrv = calc_dS_lrv(kappa, du.ind[:A], du.ind[:M], p.ind[:eta_SA], p.ind[:gamma], eta_AS, u.ind[:y_j][1], u.ind[:y_jP][1])
-    dS_mt = calc_dS_mt(u.ind[:metamorph], eta_AS, u.ind[:y_j][1], u.ind[:y_jP][1], du.ind[:A])
-    
-    du.ind.S = dS(u.ind[:embryo], u.ind[:juvenile], u.ind[:adult], dS_emb_juv_ad, u.ind[:larva], dS_lrv, u.ind[:metamorph], dS_mt)
+    @inbounds begin
 
+        y_j = u.ind[:y_j]
+        y_jP = u.ind[:y_jP]
+
+        dS_emb_juv_ad = calc_dS_emb_juv_ad(kappa, du.ind[:A], du.ind[:M], p.ind[:eta_SA], y_j[1], y_jP[1], eta_AS)
+        dS_lrv = calc_dS_lrv(kappa, du.ind[:A], du.ind[:M], p.ind[:eta_SA], p.ind[:gamma], eta_AS, y_j[1], y_jP[1])
+        dS_mt = calc_dS_mt(u.ind[:metamorph], eta_AS, y_j[1], y_jP[1], du.ind[:A])
+        
+        du.ind.S = dS(u.ind[:embryo], u.ind[:juvenile], u.ind[:adult], dS_emb_juv_ad, u.ind[:larva], dS_lrv, u.ind[:metamorph], dS_mt)
+    
+    end
+    
     return nothing
 end 
 

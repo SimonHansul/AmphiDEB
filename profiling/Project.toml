@@ -1,0 +1,6 @@
+[deps]
+AmphiDEB = "eee04faf-3499-4765-a0c5-d172f1a51fe4"
+BenchmarkTools = "6e4b80f9-dd63-53aa-95a3-0cdb28fa8baf"
+Cthulhu = "f68482b8-f384-11e8-15f7-abe071a5a75f"
+EcotoxSystems = "a070e96f-54e2-4e3c-8571-6208d1dd8981"
+Revise = "295af30f-e4ad-537b-8983-00126c2a3abe"
